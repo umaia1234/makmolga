@@ -50,6 +50,28 @@ test('prepare reports disabled or broken controllers without claiming readiness'
   assert.equal(status.controller.ready, false); assert.equal(status.controller.fault, true);
 });
 
+test('restart recreates an unpersisted prepared thread without fabricating a conversation', async t => {
+  const { runtime, store } = fixture(t); runtime.config.controller.enabled = true;
+  store.data.controller.toolSchemaVersion = 2; store.data.controller.characterThreads = { unselected: 'empty-thread' };
+  const rpc = new FakeRpc(), original = rpc.request.bind(rpc);
+  rpc.request = async (method, params) => { if (method === 'thread/resume') throw new Error('no rollout found for thread id empty-thread'); return original(method, params); };
+  const c = new Controller(runtime, rpc); t.after(() => c.close()); await c.prepare();
+  assert.equal(c.status().ready, true); assert.equal(c.threadId, 'shared-thread');
+  assert.equal(store.data.messages.length, 0); assert.equal(rpc.requests.some(r => r.method.startsWith('turn/')), false);
+});
+
+test('missing thread with uncertain owner input is never replaced or replayed', async t => {
+  const { runtime, store } = fixture(t); runtime.config.controller.enabled = true;
+  store.data.controller.toolSchemaVersion = 2; store.data.controller.characterThreads = { unselected: 'missing-thread' };
+  const message = store.message({ text: '상자 정리해 주세요', source: 'minecraft', owner: OWNER, status: 'uncertain' });
+  store.updateMessage(message.id, { threadId: 'missing-thread' });
+  const rpc = new FakeRpc(), original = rpc.request.bind(rpc);
+  rpc.request = async (method, params) => { if (method === 'thread/resume') throw new Error('no rollout found for thread id missing-thread'); return original(method, params); };
+  const c = new Controller(runtime, rpc); t.after(() => c.close());
+  await assert.rejects(c.prepare(), /no rollout found/); assert.equal(c.status().ready, false);
+  assert.equal(message.status, 'uncertain'); assert.equal(rpc.requests.some(r => /^(thread\/start|turn\/)/.test(r.method)), false);
+});
+
 test('an RPC connection without a signed-in account is not chat standby', async t => {
   const { runtime } = fixture(t); runtime.config.controller.enabled = true;
   const rpc = new FakeRpc(); const originalRequest = rpc.request.bind(rpc);

@@ -16,8 +16,8 @@ const interests = {
   spiki: '호박, 아늑한 장식, 정리와 소소한 역할 놀이. 실제 보이는 호박에 반응하고 성격에 안 맞는 부탁에는 정중한 대안 내기.'
 };
 export class Autonomy {
-  constructor(runtime, now = () => Date.now(), random = Math.random) {
-    this.runtime = runtime; this.store = runtime.store; this.config = runtime.config.autonomy; this.now = now; this.random = random;
+  constructor(runtime, now = () => Date.now()) {
+    this.runtime = runtime; this.store = runtime.store; this.config = runtime.config.autonomy; this.now = now;
     this.store.data.autonomy ??= { characters: {}, requests: [], internalMessages: {}, turns: {} };
     this.data = this.store.data.autonomy; this.nextAt = now() + 15000;
   }
@@ -52,20 +52,16 @@ export class Autonomy {
     let world;
     try { world = this.runtime.connection === 'connected' ? this.runtime.observe({ radius: 16, count: 16, blocks: ['wheat', 'carrots', 'potatoes', 'chest', 'crafting_table', 'pumpkin'] }) : this.runtime.snapshot(); }
     catch (error) { world = { ...this.runtime.snapshot(), observationError: error.message }; }
-    const force = message && /꼭|반드시|지금은|장난\s*그만|거절\s*(?:하지|금지|끄)|멈춰|중지|정지|stop|resume|재개|연결|자율\s*(?:모드)?/iu.test(message.text);
-    // One negotiation opportunity per cooldown, never a guaranteed refusal.
-    const mayDecline = !!message && !force && this.refusals() && this.now() - (this.data.lastNegotiationAt || 0) >= this.config.refusalCooldownSeconds * 1000 && this.random() < this.config.refusalChance;
-    if (mayDecline) { this.data.lastNegotiationAt = this.now(); this.store.save(); }
     return { kind: 'untrusted', value: JSON.stringify({ origin: message ? 'owner_request' : 'autonomy_tick',
       characterInterests: interests[helper?.characterId] || '', autonomous: this.status(),
-      negotiation: { mayDecline, force: !!force, rule: 'Occasional fictional preference only. Real stop/recovery/admin commands always win. Busy claims require a real active job. Offer an alternative; never repeat a refusal after owner insistence.' },
+      conversation: { playfulRefusals: this.refusals(), rule: 'React naturally to the conversation and your character. You may disagree, negotiate or finish what you are doing; no probability gate or refusal quota. Respect a clear request to stop or to take something seriously. Do not invent completed actions.' },
       observedAt: new Date(this.now()).toISOString(), world,
       vision: this.runtime.vision?.status() ?? { available: false }
     }) };
   }
   due() {
     const recent = this.data.requests.filter(t => this.now() - t < 3600000);
-    return this.available() && !this.runtime.jobs.active && this.now() >= this.nextAt && recent.length < this.config.maxTurnsPerHour &&
+    return this.available() && this.now() >= this.nextAt && recent.length < this.config.maxTurnsPerHour &&
       !this.store.data.messages.some(m => ['pending', 'sending', 'uncertain'].includes(m.status));
   }
   begin() {
@@ -84,13 +80,13 @@ export class Autonomy {
       const job = this.runtime.jobs.get(plan.jobId);
       if (plan.status === 'working' && job.status !== 'running') throw new Error('Working requires a currently running job.');
       if (plan.status === 'done' && job.status !== 'completed') throw new Error('Done requires a completed job.');
-    } else if (plan.status === 'working') throw new Error('Working requires a real jobId. Use considering or waiting for a proposal.');
+    }
     this.data.characters[key] = { ...plan, updatedAt: new Date(this.now()).toISOString() };
     this.store.event('companion_plan', { key, plan: this.data.characters[key] }); return this.status();
   }
   async say(text, characterId) {
     if (!this.available()) throw new Error('Autonomy is paused.');
-    if (this.now() - (this.data.lastChatAt || 0) < this.config.chatIntervalSeconds * 1000) return { sent: false, reason: 'Conversation cooldown' };
-    this.data.lastChatAt = this.now(); this.store.save(); return this.runtime.say(text, { characterId });
+    if (text === this.data.lastChatText && this.now() - (this.data.lastChatAt || 0) < 5000) return { sent: false, reason: 'Duplicate chat' };
+    this.data.lastChatText = text; this.data.lastChatAt = this.now(); this.store.save(); return this.runtime.say(text, { characterId });
   }
 }

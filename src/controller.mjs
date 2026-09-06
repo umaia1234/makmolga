@@ -12,7 +12,7 @@ export class Controller {
     this.activeTurn = null; this.sending = false; this.started = false; this.fault = false; this.closed = false; this.replied = new Set();
     this.rpc.on('notification', m => { this.onNotification(m).catch(e => this.store.event('controller_event_error', { error: e.message })); });
     this.rpc.on('request', m => { this.onRequest(m).catch(e => { try { this.rpc.reject(m.id, e.message); } catch {} }); });
-    this.rpc.on('closed', e => { if (!this.closed) { this.fault = true; this.lastError = e.message; this.store.event('controller_disconnected', { error: e.message }); } });
+    this.rpc.on('closed', e => { if (!this.closed) { this.fault = true; this.lastError ||= e.message; this.store.event('controller_disconnected', { error: this.lastError }); } });
   }
   async start() {
     if (this.closed || this.fault) throw new Error('Controller is closed or faulted. Inspect events before restarting the runtime.');
@@ -68,10 +68,17 @@ export class Controller {
     let result;
     const prompt = fs.readFileSync(path.join(ROOT, 'skills', 'minecraft-companion', 'references', 'controller-prompt.md'), 'utf8') + '\n\n' + personaInstructions(characterId);
     if (savedId) {
-      result = await this.rpc.request('thread/resume', { threadId: savedId, developerInstructions: prompt });
+      try { result = await this.rpc.request('thread/resume', { threadId: savedId, developerInstructions: prompt }); }
+      catch (error) {
+        // App Server may not persist a prepared thread until its first turn.
+        // Preserve uncertain/delivered owner conversations for reconciliation.
+        if (error.message !== `no rollout found for thread id ${savedId}` || this.store.data.messages.some(m => m.threadId === savedId)) throw error;
+        this.store.event('controller_unpersisted_thread', { characterId, previousThreadId: savedId });
+      }
       // Only a thread created with this tool bundle is a supported standalone controller.
       // An existing Desktop conversation uses the MCP mode instead.
-    } else {
+    }
+    if (!result) {
       result = await this.rpc.request('thread/start', { cwd: ROOT, ...(this.config.model ? { model: this.config.model } : {}), developerInstructions: prompt, dynamicTools: toolSpec(), environments: [], ephemeral: false, serviceName: 'minecraft-companion' });
     }
     this.threadId = result.thread.id; this.characterKey = key;
@@ -102,10 +109,10 @@ export class Controller {
     const activeJob = this.runtime.jobs.active?.job;
     if (activeJob?.origin === 'autonomy' && (!auto.available() || activeJob.autonomyKey !== auto.key())) this.runtime.jobs.cancel('Autonomy paused or character/world changed');
     if (this.activeTurn && auto.turn(this.activeTurn)?.origin === 'autonomy' &&
-        (message || !auto.available() || auto.turn(this.activeTurn)?.key !== auto.key())) {
+        (!auto.available() || auto.turn(this.activeTurn)?.key !== auto.key())) {
       if (this.interrupting !== this.activeTurn) {
         this.interrupting = this.activeTurn;
-        if (this.runtime.jobs.active?.job.origin === 'autonomy') this.runtime.jobs.cancel('Owner request or autonomy pause');
+        if (this.runtime.jobs.active?.job.origin === 'autonomy') this.runtime.jobs.cancel('Autonomy paused or character/world changed');
         try { await this.rpc.request('turn/interrupt', { threadId: this.threadId, turnId: this.activeTurn }); }
         catch (error) { this.fault = true; this.store.event('autonomy_interrupt_failed', { error: error.message }); }
       }
@@ -120,7 +127,7 @@ export class Controller {
       if (this.activeTurn && helperRevision !== (this.store.data.controller.activeHelperRevision || 0)) return;
       if (!this.activeTurn) await this.selectCharacterThread();
       const recent = (this.store.data.controller.requests || []).filter(t => Date.now() - t < 3600000);
-      if (recent.length >= this.config.maxTurnsPerHour) {
+      if (this.config.maxTurnsPerHour != null && recent.length >= this.config.maxTurnsPerHour) {
         if (!this.rateLimited) { this.rateLimited = true; this.store.event('controller_rate_limited'); } return;
       }
       this.rateLimited = false;
@@ -156,7 +163,7 @@ export class Controller {
       if (!auto.due() || this.activeTurn) return;
       const id = auto.begin(), voice = this.store.data.helper.characterId, key = auto.key();
       this.pendingOrigin = 'autonomy'; this.pendingVoice = voice;
-      const text = 'AUTONOMY_TICK: Scheduled companion reflection, not a message from the owner. Inspect current observations, reconcile your saved plan with actual jobs, choose one small useful next step or rest. Save a concise decision with minecraft_plan. You may start a bounded chore and initiate brief in-character conversation via minecraft_chat when something is worth saying. Do not ask for work on every tick. Final text is private and will not be sent to game chat.';
+      const text = 'AUTONOMY_TICK: A moment to look around while playing together; this is not an owner message. Continue what you are doing, react to the scene, chat, try something interesting or rest. No productivity target or mandatory plan update. Use minecraft_plan only for something worth remembering. Use minecraft_chat when you want to speak; final text stays private.';
       const result = await this.rpc.request('turn/start', { threadId: this.threadId, clientUserMessageId: id,
         input: [{ type: 'text', text, text_elements: [] }, ...this.runtime.vision.input()],
         additionalContext: { ...personaContext(this.store), companion_observation: auto.context() } });

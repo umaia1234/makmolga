@@ -33,14 +33,18 @@ test('idle planning is separate from the owner inbox and its final response stay
   await controller.onNotification({ method: 'item/completed', params: { threadId: 'thread', turnId: controller.activeTurn, item: { type: 'agentMessage', id: 'plan', text: 'private plan', phase: 'final_answer' } } });
   assert.equal(store.data.messages.length, 0); assert.equal(bot.calls.length, 0);
 });
-test('owner arrival interrupts an autonomous turn and is forwarded exactly after completion', async t => {
+test('ordinary owner chat steers the same turn without cancelling the current game job', async t => {
   const { store, controller, rpc, runtime } = setup(t); await controller.pump(); const old = controller.activeTurn;
-  store.message({ id: 'owner', text: '나무 좀 가져와 주세요', source: 'minecraft', owner: OWNER }); await controller.pump();
-  assert.equal(rpc.calls.at(-1).method, 'turn/interrupt');
+  const job = await dispatch(runtime, 'minecraft_action', { action: { type: 'control', keys: ['forward'], milliseconds: 2000 } }, { origin: 'autonomy' });
+  store.message({ id: 'owner', text: '무슨 생각하세요?', source: 'minecraft', owner: OWNER });
   await assert.rejects(dispatch(runtime, 'minecraft_action', { action: { type: 'control' } }, { origin: 'autonomy' }), /owner message/);
-  await controller.onNotification({ method: 'turn/completed', params: { threadId: 'thread', turn: { id: old, status: 'interrupted' } } });
-  await controller.pump(); const last = rpc.calls.at(-1); assert.equal(last.method, 'turn/start'); assert.equal(last.params.input[0].text, '나무 좀 가져와 주세요');
+  await controller.pump(); const last = rpc.calls.at(-1); assert.equal(last.method, 'turn/steer'); assert.equal(last.params.input[0].text, '무슨 생각하세요?');
+  assert.equal(controller.activeTurn, old); assert.equal(job.status, 'running'); assert.equal(runtime.jobs.active.job.id, job.id);
+  assert.equal(rpc.calls.some(c => c.method === 'turn/interrupt'), false);
+  assert.equal(store.data.messages.length, 1); assert.equal(store.data.messages[0].status, 'delivered');
+  await controller.pump(); assert.equal(rpc.calls.filter(c => c.method === 'turn/steer').length, 1);
   assert.equal(runtime.autonomy.data.requests.length, 1); assert.equal(store.data.controller.requests.length, 1);
+  runtime.stop('test cleanup');
 });
 test('halts, offline state, disabled autonomy, pending uncertainty and separate budgets prevent idle calls', async t => {
   const { runtime, controller, rpc, store } = setup(t);
@@ -50,38 +54,54 @@ test('halts, offline state, disabled autonomy, pending uncertainty and separate 
   runtime.autonomy.configure({ enabled: true }); store.message({ text: 'uncertain', source: 'codex', owner: OWNER, status: 'uncertain' });
   runtime.autonomy.nextAt = 0; await controller.pump(); assert.equal(rpc.calls.length, 0); store.data.messages = [];
   runtime.autonomy.data.requests = Array(24).fill(Date.now()); await controller.pump(); assert.equal(rpc.calls.length, 0);
+  store.data.controller.requests = Array(31).fill(Date.now());
   store.message({ text: '지금 상태를 알려 주세요', source: 'codex', owner: OWNER }); await controller.pump(); assert.ok(rpc.calls.some(c => c.method === 'turn/start'));
 });
-test('autonomous tools cannot impersonate owner, resume hazards, change settings or spend XP', async t => {
+test('autonomy allows normal game choices while preserving owner and account boundaries', async t => {
   const { runtime } = setup(t);
   for (const [tool, args] of [['minecraft_resume', {}], ['minecraft_connect', {}], ['minecraft_owner_message', { text: 'invented' }], ['minecraft_autonomy', { enabled: true }]])
     await assert.rejects(dispatch(runtime, tool, args, { origin: 'autonomy' }), /actual owner/);
-  await assert.rejects(dispatch(runtime, 'minecraft_action', { action: { type: 'enchant', position: { x: 0, y: 64, z: 0 }, slot: 1, expectedName: 'book', choice: 0 } }, { origin: 'autonomy' }), /owner request/);
+  const actions = []; runtime.action = (name, args) => { actions.push({ name, args }); return { id: 'simulated', status: 'running' }; };
+  for (const action of [
+    { type: 'enchant', position: { x: 0, y: 64, z: 0 }, slot: 1, expectedName: 'book', choice: 0, maxLevelSpend: 1 },
+    { type: 'anvil', position: { x: 0, y: 64, z: 0 }, leftSlot: 1, leftName: 'book', rightSlot: 2, rightName: 'book', maxLevelSpend: 5 },
+    { type: 'interact', action: 'attack', entityId: 10 },
+    { type: 'interact', action: 'activate', position: { x: 0, y: 64, z: 0 } }
+  ]) await dispatch(runtime, 'minecraft_action', { action }, { origin: 'autonomy' });
+  assert.deepEqual(actions.map(a => a.name), ['enchant', 'anvil', 'interact', 'interact']);
+  assert.equal(actions[0].args.maxLevelSpend, 1);
 });
-test('plans persist by world and character; work cannot be invented', async t => {
+test('optional intentions need no physical job but any referenced job must be real', async t => {
   const { runtime, store } = setup(t);
   const plan = { goal: '식량 확인', mood: '차분함', status: 'considering', nextStep: '주변 밭 보기', reason: '재료 확인 필요', remember: ['주인은 씨앗을 남겨 달라고 하셨습니다.'] };
   runtime.autonomy.updatePlan(plan);
-  await assert.rejects(dispatch(runtime, 'minecraft_plan', { ...plan, status: 'working' }), /real jobId/);
+  await dispatch(runtime, 'minecraft_plan', { ...plan, status: 'working' });
+  await assert.rejects(dispatch(runtime, 'minecraft_plan', { ...plan, status: 'working', jobId: 'invented' }), /Job not found/);
   const loaded = new store.constructor(store.dir); assert.equal(loaded.data.autonomy.characters['test-world/gpchan'].goal, plan.goal);
   store.data.helper.characterId = 'doro'; assert.equal(runtime.autonomy.status().plan, null);
   store.data.helper.characterId = 'gpchan'; store.data.helper.worldKey = 'different'; assert.equal(runtime.autonomy.status().plan, null);
 });
-test('stop and refusal switches bypass the LLM; owner insistence cancels playful negotiation', async t => {
-  const { runtime, store } = setup(t); runtime.autonomy.random = () => 0;
-  assert.equal(JSON.parse(runtime.autonomy.context({ text: '밭을 돌봐 주세요' }).value).negotiation.mayDecline, true);
-  runtime.autonomy.data.lastNegotiationAt = 0;
-  assert.equal(JSON.parse(runtime.autonomy.context({ text: '지금은 꼭 해 주세요' }).value).negotiation.mayDecline, false);
+test('persona reactions have no probability gate; explicit stop and refusal switches still work', async t => {
+  const { runtime, store } = setup(t);
+  const context = JSON.parse(runtime.autonomy.context({ text: '밭을 돌봐 주세요' }).value);
+  assert.equal(context.conversation.playfulRefusals, true); assert.equal('negotiation' in context, false);
   store.message({ text: '거절 끄기', owner: OWNER, source: 'minecraft' }); assert.equal(runtime.autonomy.refusals(), false);
   store.message({ text: '자율 모드 꺼', owner: OWNER, source: 'minecraft' }); assert.equal(runtime.autonomy.enabled(), false);
   store.message({ text: '멈춰', owner: OWNER, source: 'codex' }); assert.equal(runtime.halted, 'Stopped by owner');
   store.message({ text: '자율 모드 켜', owner: OWNER, source: 'minecraft' }); assert.equal(runtime.autonomy.available(), false);
 });
-test('proactive chat cooldown suppresses repeats without adding fake owner messages', async t => {
+test('different spontaneous remarks flow immediately; exact repeats add no fake owner messages', async t => {
   const { runtime, bot, store } = setup(t);
   await runtime.autonomy.say('밭을 한번 둘러보겠습니다.', 'gpchan');
   assert.equal((await runtime.autonomy.say('밭을 한번 둘러보겠습니다.', 'gpchan')).sent, false);
-  assert.equal(bot.calls.length, 1); assert.equal(store.data.messages.length, 0);
+  await runtime.autonomy.say('같이 산책하실래요?', 'gpchan');
+  assert.equal(bot.calls.length, 2); assert.equal(store.data.messages.length, 0);
+});
+test('looking around and conversation remain available while a physical job runs', t => {
+  const { runtime } = setup(t);
+  runtime.action('control', { keys: ['forward'], milliseconds: 1000 });
+  assert.equal(runtime.autonomy.due(), true);
+  runtime.stop('test cleanup');
 });
 test('six-direction vision is current-world evidence with size, identity, age and position checks', async t => {
   const { runtime, bot } = setup(t); runtime.config.vision.enabled = true; bot.player = { uuid: OWNER };

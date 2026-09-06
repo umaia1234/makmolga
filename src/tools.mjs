@@ -29,7 +29,7 @@ export const actionSchema = z.discriminatedUnion('type', [
 const empty = z.object({}).strict();
 export const definitions = [
   { name: 'minecraft_autonomy', description: 'Read autonomy status. Change enabled or playfulRefusals only on an actual owner request; never clears a safety halt.', schema: z.object({ enabled: z.boolean().optional(), playfulRefusals: z.boolean().optional() }).strict() },
-  { name: 'minecraft_plan', description: 'Persist this character and world\'s concise goal, mood, next step and factual memories. Working needs a running jobId. Store decisions and observed results, not hidden reasoning or invented progress.', schema: planSchema },
+  { name: 'minecraft_plan', description: 'Optional character/world notebook for intentions, mood and memorable facts. Add jobId when referring to an actual tool job. This is not a mandatory report or proof of work.', schema: planSchema },
   { name: 'minecraft_helpers', description: 'List the five helper characters, their brief personalities, and the current selection. Selection does not connect a bot or start work.', schema: empty, readOnly: true },
   { name: 'minecraft_select_helper', description: 'Apply the owner-selected character to the next controller turn. worldKey identifies the client world; when the bot is connected, serverAddress must match the configured target. Does not change an account skin or start work.', schema: z.object({ characterId: z.enum(['yanro', 'gpchan', 'doro', 'gemchan', 'spiki']), worldKey: z.string().regex(/^[a-zA-Z0-9:_-]{1,128}$/), serverAddress: z.string().min(1).max(255).nullable().default(null) }).strict() },
   { name: 'minecraft_status', description: 'Read connection, health, oxygen, inventory, active job, and controller status. Always inspect before acting.', schema: empty, readOnly: true },
@@ -55,7 +55,6 @@ export async function dispatch(runtime, toolName, input = {}, { speechCharacterI
     const allowed = ['minecraft_status', 'minecraft_observe', 'minecraft_helpers', 'minecraft_job', 'minecraft_events', 'minecraft_plan', 'minecraft_chat', 'minecraft_action', 'minecraft_stop'];
     if (!allowed.includes(toolName)) throw new Error('Requires an actual owner request. Autonomous turns cannot change control settings, identity or owner messages.');
     if (['minecraft_action', 'minecraft_chat'].includes(toolName) && (!runtime.autonomy.available() || store.data.messages.some(m => ['pending', 'sending', 'uncertain'].includes(m.status)))) throw new Error('Autonomy paused or an owner message is waiting.');
-    if (toolName === 'minecraft_action' && ((a.action.type === 'enchant' && a.action.choice !== null) || a.action.type === 'anvil' || (a.action.type === 'interact' && ['attack', 'activate'].includes(a.action.action)))) throw new Error('Spending experience or combat/activation requires an owner request.');
   }
   switch (toolName) {
     case 'minecraft_autonomy': return Object.keys(a).length ? runtime.autonomy.configure(a) : runtime.autonomy.status();

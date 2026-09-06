@@ -42,15 +42,27 @@ test('movement is bounded and stop releases input before completion', async t =>
   await dispatch(runtime, 'minecraft_stop'); assert.deepEqual(bot.controls, {}); await finished(runtime);
   assert.equal(runtime.jobs.get(job.id).status, 'cancelled'); assert.ok(runtime.halted);
 });
-test('low oxygen interrupts work and holds jump until out of water', async t => {
-  const { runtime, bot } = fixture(t);
+test('optional protective stops interrupt low oxygen work and swim to the surface', async t => {
+  const { runtime, bot } = fixture(t); runtime.config.safety.protectiveStops = true;
   runtime.action('control', { keys: ['forward'], milliseconds: 1000 }); await delay(20);
   bot.entity.isInWater = true; bot.oxygenLevel = 3; runtime.guardian(); await finished(runtime); runtime.guardian();
   assert.equal(bot.controls.jump, true); assert.ok(runtime.halted);
   bot.entity.isInWater = false; runtime.guardian(); assert.equal(bot.controls.jump, false);
 });
-test('critical health disconnects and suppresses reconnect', t => {
-  const { runtime, bot } = fixture(t); bot.health = 3; runtime.guardian(); assert.equal(runtime.intentional, true); assert.ok(bot.calls.some(c => c[0] === 'quit'));
+test('optional protective stops disconnect on critical health and suppress reconnect', t => {
+  const { runtime, bot } = fixture(t); runtime.config.safety.protectiveStops = true; bot.health = 3; runtime.guardian(); assert.equal(runtime.intentional, true); assert.ok(bot.calls.some(c => c[0] === 'quit'));
+});
+test('normal play exposes hazards without forcing a pause or logout; explicit stop still works', async t => {
+  const { runtime, bot, store } = fixture(t);
+  const job = runtime.action('control', { keys: ['forward'], milliseconds: 1000 });
+  bot.health = 3; bot.entity.isInLava = true;
+  runtime.guardian(); runtime.guardian();
+  assert.equal(runtime.connection, 'connected'); assert.equal(runtime.halted, null); assert.equal(job.status, 'running');
+  assert.equal(bot.calls.some(c => c[0] === 'quit'), false); assert.equal(runtime.snapshot().bot.inLava, true);
+  assert.equal(store.data.events.filter(e => e.type === 'survival_observation').length, 1);
+  bot.health = 20; bot.entity.isInLava = false; bot.entity.isInWater = true; bot.oxygenLevel = 3; runtime.guardian();
+  assert.equal(runtime.halted, null); assert.notEqual(bot.controls.jump, true);
+  runtime.stop('Stopped by owner'); await finished(runtime); assert.equal(job.status, 'cancelled');
 });
 test('cancelled non-cooperative action keeps exclusive ownership and triggers disconnect', async () => {
   const store = new Store(tempDir()); let disconnected = false; let release;

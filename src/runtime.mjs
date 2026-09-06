@@ -82,7 +82,7 @@ export class Runtime {
   resume() {
     this.requireBot();
     if (this.jobs.active) throw new Error('Wait for the cancelled action to settle.');
-    if (this.bot.health < this.config.safety.minHealth || this.bot.entity.isInWater || this.bot.entity.isInLava) throw new Error('Unsafe state. Recover health / leave water before resuming work.');
+    if (this.config.safety.protectiveStops && (this.bot.health < this.config.safety.minHealth || this.bot.entity.isInWater || this.bot.entity.isInLava)) throw new Error('Unsafe state. Recover health / leave water before resuming work.');
     this.halted = null; this.store.data.pausedOnRestart = null; this.store.save(); return this.snapshot();
   }
   disconnect(reason = 'Disconnected by owner') {
@@ -101,20 +101,26 @@ export class Runtime {
   guardian() {
     const b = this.bot; if (this.connection !== 'connected' || !b?.entity || b.health <= 0) return;
     const c = this.config.safety;
-    if (b.health <= c.disconnectHealth || b.entity.isInLava) { this.store.event('emergency_disconnect', { health: b.health, lava: !!b.entity.isInLava }); this.disconnect('Critical health or lava'); return; }
-    if (b.entity.isInWater && (b.oxygenLevel ?? 20) <= c.minOxygen) {
+    const danger = b.entity.isInLava ? 'lava' : b.health <= c.disconnectHealth ? 'critical_health' : b.entity.isInWater && (b.oxygenLevel ?? 20) <= c.minOxygen ? 'low_oxygen' : b.health < c.minHealth ? 'low_health' : null;
+    if (danger !== (this.lastDanger ?? null)) {
+      this.lastDanger = danger;
+      this.store.event('survival_observation', { danger, health: b.health, oxygen: b.oxygenLevel });
+      if (danger) this.autonomy.nextAt = Math.min(this.autonomy.nextAt, Date.now());
+    }
+    if (c.protectiveStops && (b.health <= c.disconnectHealth || b.entity.isInLava)) { this.store.event('emergency_disconnect', { health: b.health, lava: !!b.entity.isInLava }); this.disconnect('Critical health or lava'); return; }
+    if (c.protectiveStops && b.entity.isInWater && (b.oxygenLevel ?? 20) <= c.minOxygen) {
       if (!this.rescuing) { this.rescuing = true; this.stop('Low oxygen: swim to surface'); }
       if (b.currentWindow) b.closeWindow(b.currentWindow);
       b.setControlState('jump', true); return;
     }
     if (this.rescuing && !b.entity.isInWater) { this.rescuing = false; b.setControlState('jump', false); this.store.event('surface_reached'); }
-    if (b.health < c.minHealth && !this.halted) this.stop('Health below work threshold');
+    if (c.protectiveStops && b.health < c.minHealth && !this.halted) this.stop('Health below work threshold');
     if (c.autoEat && b.food <= c.eatBelow && !this.jobs.active && this.foodItem() && !this.rescuing && !b.currentWindow) this.action('eat', {});
   }
   snapshot() {
     const b = this.bot;
     return { connection: this.connection, halted: this.halted, targetVersion: this.config.minecraft.targetVersion, clientVersion: this.config.minecraft.clientVersion, translation: this.config.proxy.enabled ? `ViaProxy ${this.config.minecraft.clientVersion} → ${this.config.minecraft.targetVersion}; new content may be remapped` : null,
-      bot: b?.entity ? { username: b.username, position: b.entity.position, yaw: b.entity.yaw, pitch: b.entity.pitch, health: b.health, food: b.food, oxygen: b.oxygenLevel, inWater: !!b.entity.isInWater, onGround: b.entity.onGround, dimension: b.game?.dimension, level: b.experience?.level, time: b.time?.timeOfDay, inventory: b.inventory?.items().map(itemView) ?? [] } : null,
+      bot: b?.entity ? { username: b.username, position: b.entity.position, yaw: b.entity.yaw, pitch: b.entity.pitch, health: b.health, food: b.food, oxygen: b.oxygenLevel, inWater: !!b.entity.isInWater, inLava: !!b.entity.isInLava, onGround: b.entity.onGround, dimension: b.game?.dimension, level: b.experience?.level, time: b.time?.timeOfDay, inventory: b.inventory?.items().map(itemView) ?? [] } : null,
       activeJob: this.jobs.active?.job ?? null, helper: this.store.data.helper ?? null, controller: this.store.data.controller,
       autonomy: this.autonomy.status(), vision: this.vision.status(), pendingMessages: this.store.data.messages.filter(m => ['pending', 'uncertain'].includes(m.status)).length };
   }

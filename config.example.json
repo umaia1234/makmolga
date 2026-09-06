@@ -35,7 +35,8 @@
     "autoEat": true,
     "eatBelow": 16,
     "maxTravel": 64,
-    "home": null
+    "home": null,
+    "protectiveStops": false
   },
   "controller": {
     "enabled": false,
@@ -45,17 +46,14 @@
     "threadId": null,
     "model": null,
     "replyInGame": true,
-    "maxTurnsPerHour": 30,
+    "maxTurnsPerHour": null,
     "idleTimeoutSeconds": 300
   },
   "autonomy": {
     "enabled": false,
     "intervalSeconds": 90,
     "maxTurnsPerHour": 24,
-    "chatIntervalSeconds": 25,
-    "playfulRefusals": true,
-    "refusalChance": 0.18,
-    "refusalCooldownSeconds": 600
+    "playfulRefusals": true
   },
   "vision": {
     "enabled": false,
