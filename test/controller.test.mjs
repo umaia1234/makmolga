@@ -5,12 +5,15 @@ import { Controller } from '../src/controller.mjs';
 import { Rpc } from '../src/rpc.mjs';
 import { fixture, OWNER } from './helpers.mjs';
 import { dispatch } from '../src/tools.mjs';
+import { serve } from '../src/api.mjs';
+import { call } from '../src/client.mjs';
 
 class FakeRpc extends EventEmitter {
   constructor() { super(); this.requests = []; this.responses = []; this.failTurn = false; }
   async connect() { return {}; }
   async request(method, params) {
     this.requests.push({ method, params });
+    if (method === 'account/read') return { requiresOpenaiAuth: true, account: { type: 'chatgpt' } };
     if (method === 'thread/start' || method === 'thread/resume') return { thread: { id: 'shared-thread', turns: [] } };
     if (method === 'turn/start' || method === 'turn/steer') { if (this.failTurn) throw new Error('Timed out after acceptance'); if (method === 'turn/start') this.turn = (this.turn || 0) + 1; const id = `turn-${this.turn}`; return { turn: { id }, turnId: id }; }
     return {};
@@ -19,6 +22,40 @@ class FakeRpc extends EventEmitter {
   reject(id, message) { this.responses.push({ id, error: message }); }
   close() {}
 }
+
+test('concurrent prepare calls connect once without creating an LLM turn or user message', async t => {
+  const { runtime, store } = fixture(t); runtime.config.controller.enabled = true;
+  const rpc = new FakeRpc(); let connections = 0;
+  rpc.connect = async () => { connections++; await new Promise(resolve => setTimeout(resolve, 20)); };
+  const c = new Controller(runtime, rpc); const server = await serve(runtime, c);
+  t.after(() => { c.close(); server.closeAllConnections(); server.close(); });
+  const before = await call('companion_session', {}, { dir: store.dir }); assert.equal(before.controller.ready, false);
+  const ready = await Promise.all(Array.from({ length: 3 }, () => call('companion_prepare', {}, { dir: store.dir })));
+  assert.equal(connections, 1); assert.equal(rpc.requests.filter(r => r.method === 'thread/start').length, 1);
+  assert.equal(rpc.requests.filter(r => r.method.startsWith('turn/')).length, 0);
+  assert.equal(store.data.messages.length, 0); assert.equal(ready.every(r => r.controller.ready), true);
+  assert.equal(ready[0].runtime.connection, 'connected');
+});
+
+test('prepare reports disabled or broken controllers without claiming readiness', async t => {
+  const { runtime, store } = fixture(t); const rpc = new FakeRpc();
+  rpc.connect = async () => { throw new Error('Login required'); };
+  const c = new Controller(runtime, rpc); const server = await serve(runtime, c);
+  t.after(() => { c.close(); server.closeAllConnections(); server.close(); });
+  await assert.rejects(call('companion_prepare', {}, { dir: store.dir }), /controller.enabled/);
+  runtime.config.controller.enabled = true;
+  await assert.rejects(call('companion_prepare', {}, { dir: store.dir }), /Login required/);
+  const status = await call('companion_session', {}, { dir: store.dir });
+  assert.equal(status.controller.ready, false); assert.equal(status.controller.fault, true);
+});
+
+test('an RPC connection without a signed-in account is not chat standby', async t => {
+  const { runtime } = fixture(t); runtime.config.controller.enabled = true;
+  const rpc = new FakeRpc(); const originalRequest = rpc.request.bind(rpc);
+  rpc.request = async (method, params) => method === 'account/read' ? { requiresOpenaiAuth: true, account: null } : originalRequest(method, params);
+  const c = new Controller(runtime, rpc); t.after(() => c.close());
+  await assert.rejects(c.prepare(), /login is required/); assert.equal(c.status().ready, false);
+});
 test('Minecraft and Codex input are exact user text in the same thread and active-turn steering', async t => {
   const { runtime, store } = fixture(t); const rpc = new FakeRpc(); const c = new Controller(runtime, rpc); t.after(() => c.close());
   store.message({ id: 'mc-1', source: 'minecraft', owner: OWNER, text: '밭을 수확해 주세요' }); await c.pump();

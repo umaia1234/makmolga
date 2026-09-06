@@ -21,6 +21,8 @@
     "mcp": "node src/mcp.mjs",
     "ctl": "node src/cli.mjs",
     "doctor": "node scripts/doctor.mjs",
+    "standby": "node scripts/start-session.mjs",
+    "skill:install": "node scripts/install-skill.mjs",
     "test": "node --test --test-concurrency=1 test/*.test.mjs",
     "check": "node scripts/check.mjs"
   },

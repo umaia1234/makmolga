@@ -41,6 +41,35 @@ Java 26.2 로컬 월드에서 사용자와 봇의 동시 접속, 게임 채팅 �
 
 ## 빠른 시작
 
+### 다음부터는 Codex에 “마크 시작”
+
+서버·소유자 UUID·Codex 연결을 아래 안내대로 한 번 설정한 뒤, 프로젝트 폴더에서 시작 스킬을 설치합니다.
+
+```powershell
+npm run skill:install
+```
+
+이 PC의 다른 Codex 대화에서도 **`마크 시작`**이라고 말씀하시면 됩니다. 마크 동료를 이야기하던 대화에서는 **`시작`**, 스킬을 명시적으로 지정할 때는 **`$makmolga-start`**를 사용합니다. 스킬이 보이지 않으면 Codex를 재시작합니다. 자연어 선택은 설명과 대화 문맥에 따라 이루어지며 모든 용도의 “시작”을 가로채는 명령은 아닙니다. [공식 스킬 안내](https://learn.chatgpt.com/docs/build-skills)
+
+스킬은 로컬 등록 파일에서 프로젝트 위치를 찾습니다. 직접 실행하려면 다음 명령을 사용합니다.
+
+```powershell
+.\Start-Makmolga.ps1
+# 또는
+npm run standby
+```
+
+- 서버와 실행기가 켜져 있으면 재사용하고, 준비된 로컬 서버가 꺼져 있으면 기존 월드를 켭니다.
+- Codex의 게임 전용 대화를 연결한 뒤 봇의 실제 월드 접속까지 확인합니다. 시작만으로 새 사용자 메시지나 LLM 답변을 생성하지 않습니다.
+- 현재 캐릭터, 채팅 접두어, 진행 중인 작업을 유지합니다. 위험으로 중지된 봇은 자동으로 중지를 해제하지 않습니다.
+- 결과가 `waiting_for_owner_chat`이면 대기 중, `working`이면 기존 요청을 처리 중입니다. `owner.prefix`가 `""`이면 게임에서 평소처럼 채팅하면 됩니다.
+
+준비가 끝나면 Codex 대화의 답변이 끝나도 **로컬 실행기가 게임 채팅을 기다립니다.** PC가 켜져 있고 절전 상태가 아니어야 합니다. 게임 요청이 없을 때 새 LLM 턴을 계속 생성하지 않습니다. 이 기능은 로그인 시 자동 실행이나 주기적인 예약 작업을 등록하지 않습니다.
+
+`config.local.json`의 `controller.enabled=true`와 소유자 UUID가 필요합니다. 서버가 처음부터 준비되지 않았거나 인증이 만료되었다면 구체적인 오류를 표시합니다. 프로젝트를 옮겼다면 새 위치에서 `npm run skill:install`을 다시 실행합니다. 다른 PC나 WSL 호스트에는 각각 별도 설치가 필요합니다.
+
+설치 위치는 `$CODEX_HOME/skills/makmolga-start`이며 `CODEX_HOME`이 없으면 `~/.codex/skills/makmolga-start`입니다. 이 PC의 Codex App Server `skills/list`에서 `scope=user`, `enabled=true`로 검색되는 것을 확인했습니다. 설치 경로를 담은 `project.local.json`은 로컬에만 저장합니다. 절차는 [시작 스킬](skills/makmolga-start/SKILL.md)에 있습니다.
+
 ### 선택창부터 보기
 
 1. Minecraft **26.2**용 **Fabric Loader 0.19.5** 프로필을 준비합니다.

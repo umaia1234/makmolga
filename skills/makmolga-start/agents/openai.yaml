@@ -1,0 +1,6 @@
+interface:
+  display_name: "마크 동료 시작"
+  short_description: "서버와 봇을 준비하고 Codex로 게임 채팅을 기다립니다"
+  default_prompt: "$makmolga-start 서버와 동료를 준비하고 제 게임 채팅을 기다려 주세요."
+policy:
+  allow_implicit_invocation: true

@@ -25,7 +25,7 @@ async function shutdown() {
 process.on('SIGINT', () => { void shutdown().then(() => process.exit()); });
 process.on('SIGTERM', () => { void shutdown().then(() => process.exit()); });
 try {
-  const config = loadConfig(); const store = new Store(dir); runtime = new Runtime(config, store); server = await serve(runtime); controller = new Controller(runtime); controller.run();
+  const config = loadConfig(); const store = new Store(dir); runtime = new Runtime(config, store); controller = new Controller(runtime); server = await serve(runtime, controller); controller.run();
   server.on('shutdownRequested', () => { void shutdown().then(() => process.exit()); });
   console.error(`Minecraft Companion ready on 127.0.0.1:${server.address().port}. Bot auto-connect: ${config.minecraft.autoConnect}; LLM controller: ${config.controller.enabled}.`);
   if (config.minecraft.autoConnect) await runtime.connect();

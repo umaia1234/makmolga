@@ -1,5 +1,6 @@
 # Per-machine configuration and authentication
 config.local.json
+project.local.json
 .codex/
 docs/mcp-config.toml
 .env

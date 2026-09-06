@@ -12,10 +12,30 @@ export class Controller {
     this.activeTurn = null; this.sending = false; this.started = false; this.fault = false; this.closed = false; this.replied = new Set();
     this.rpc.on('notification', m => { this.onNotification(m).catch(e => this.store.event('controller_event_error', { error: e.message })); });
     this.rpc.on('request', m => { this.onRequest(m).catch(e => { try { this.rpc.reject(m.id, e.message); } catch {} }); });
-    this.rpc.on('closed', e => { if (!this.closed) { this.fault = true; this.store.event('controller_disconnected', { error: e.message }); } });
+    this.rpc.on('closed', e => { if (!this.closed) { this.fault = true; this.lastError = e.message; this.store.event('controller_disconnected', { error: e.message }); } });
   }
   async start() {
+    if (this.closed || this.fault) throw new Error('Controller is closed or faulted. Inspect events before restarting the runtime.');
     if (this.started) return;
+    if (!this.starting) this.starting = this.initialize().catch(error => {
+      this.fault = true; this.lastError = error.message; this.rpc.close(); throw error;
+    }).finally(() => { this.starting = null; });
+    return this.starting;
+  }
+  status() {
+    return { enabled: this.config.enabled, ready: this.config.enabled && this.started && !this.closed && !this.fault,
+      starting: !!this.starting, fault: this.fault, closed: this.closed, activeTurn: this.activeTurn,
+      threadId: this.threadId || this.store.data.controller.threadId || null, rateLimited: !!this.rateLimited, error: this.lastError || null };
+  }
+  async prepare() {
+    await this.start();
+    const account = await this.rpc.request('account/read', { refreshToken: false });
+    if (account.requiresOpenaiAuth !== false && !account.account) {
+      this.fault = true; this.lastError = 'Codex login is required. Sign in and restart the companion runtime.';
+      throw new Error(this.lastError);
+    }
+  }
+  async initialize() {
     if (!this.runtime.config.owner.uuid) throw new Error('Set owner.uuid before enabling the controller.');
     await this.rpc.connect(this.config, ROOT);
     const savedId = this.config.threadId || this.store.data.controller.threadId;
@@ -30,6 +50,7 @@ export class Controller {
     }
     this.threadId = result.thread.id; this.store.data.controller.threadId = this.threadId; this.store.save();
     const active = result.thread.turns?.findLast(t => t.status === 'inProgress'); if (active) this.activeTurn = active.id;
+    if (this.closed || this.fault) throw new Error('Controller closed while starting.');
     this.started = true; this.store.event('controller_ready', { threadId: this.threadId, transport: this.config.transport });
   }
   run() {

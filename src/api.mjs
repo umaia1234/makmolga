@@ -3,9 +3,14 @@ import { timingSafeEqual } from 'node:crypto';
 import { dispatch, json } from './tools.mjs';
 import { atomicJson } from './store.mjs';
 import path from 'node:path';
+import { ROOT } from './config.mjs';
 
 export function sameToken(a, b) { const x = Buffer.from(a); const y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); }
-export async function serve(runtime) {
+export async function serve(runtime, controller) {
+  const session = () => ({ protocol: 1, root: ROOT, pid: process.pid,
+    server: { host: runtime.config.minecraft.host, port: runtime.config.minecraft.port },
+    owner: { uuid: runtime.config.owner.uuid, prefix: runtime.config.owner.prefix },
+    controller: controller?.status() ?? { enabled: false, ready: false }, runtime: runtime.snapshot() });
   const server = http.createServer(async (req, res) => {
     res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store');
     const reply = (status, body) => { if (!res.writableEnded) { res.statusCode = status; res.end(json(body)); } };
@@ -19,6 +24,12 @@ export async function serve(runtime) {
       if (oversized) return;
       try {
         const body = JSON.parse(raw);
+        // Host lifecycle calls deliberately stay outside the model's Minecraft tool bundle.
+        if (body.name === 'companion_session') return reply(200, { result: session() });
+        if (body.name === 'companion_prepare') {
+          if (!controller?.config.enabled) throw new Error('Enable controller.enabled in config.local.json and restart the runtime first.');
+          await controller.prepare(); return reply(200, { result: session() });
+        }
         if (body.name === 'companion_shutdown' && server.listenerCount('shutdownRequested')) { reply(200, { result: { shuttingDown: true } }); setTimeout(() => server.emit('shutdownRequested'), 25); return; }
         const result = await dispatch(runtime, body.name, body.arguments); reply(200, { result });
       }
