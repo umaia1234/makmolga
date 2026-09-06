@@ -103,7 +103,7 @@ Codex App Server에 연결하는 컨트롤러를 구현했습니다. **게임 �
 - Codex CLI 채팅까지 실시간 공유: `transport=websocket`으로 설정하고 `node scripts/codex-server.mjs`를 실행합니다. 별도 터미널에서 `codex --remote ws://127.0.0.1:4500`으로 **같은 App Server**에 접속한 후, 저장된 컨트롤러 대화 ID를 엽니다. 컨트롤러와 CLI가 같은 서버·대화를 사용해야 합니다.
 - 모델 이름은 기본적으로 지정하지 않아 Codex 설정을 따릅니다. `controller.model`에 이름을 넣으면 그 이름을 그대로 요청합니다. 별도 OpenAI API 키를 요구하는 Responses API 앱은 아닙니다. Codex 로그인과 이용 한도를 사용합니다.
 
-권한·승인·대화 재개·중복 처리와 한계는 [채팅 연결 설명](../skills/minecraft-companion/references/controller.md)에 있습니다. 자동 모드는 기본 꺼져 있고, 이 전달물의 검증에서는 모델을 실제로 호출하지 않았습니다.
+권한·승인·대화 재개·중복 처리와 한계는 [채팅 연결 설명](../skills/minecraft-companion/references/controller.md)에 있습니다. 자동 모드는 기본 꺼져 있고, 초기 전달물 이후 실제 Codex 연결 검증을 추가했습니다. 자율 계획과 이미지 기능의 현재 범위는 [자율 동료 안내](AUTONOMY.md)에 기록합니다.
 
 ## 가능한 작업
 

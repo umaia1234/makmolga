@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { position } from './config.mjs';
 import { delay } from './jobs.mjs';
 import { helperStatus, selectHelper } from './characters.mjs';
+import { planSchema } from './autonomy.mjs';
 
 const name = z.string().regex(/^[a-z0-9_]+$/).max(100);
 const integer = z.number().int();
@@ -27,6 +28,8 @@ export const actionSchema = z.discriminatedUnion('type', [
 ]);
 const empty = z.object({}).strict();
 export const definitions = [
+  { name: 'minecraft_autonomy', description: 'Read autonomy status. Change enabled or playfulRefusals only on an actual owner request; never clears a safety halt.', schema: z.object({ enabled: z.boolean().optional(), playfulRefusals: z.boolean().optional() }).strict() },
+  { name: 'minecraft_plan', description: 'Persist this character and world\'s concise goal, mood, next step and factual memories. Working needs a running jobId. Store decisions and observed results, not hidden reasoning or invented progress.', schema: planSchema },
   { name: 'minecraft_helpers', description: 'List the five helper characters, their brief personalities, and the current selection. Selection does not connect a bot or start work.', schema: empty, readOnly: true },
   { name: 'minecraft_select_helper', description: 'Apply the owner-selected character to the next controller turn. worldKey identifies the client world; when the bot is connected, serverAddress must match the configured target. Does not change an account skin or start work.', schema: z.object({ characterId: z.enum(['yanro', 'gpchan', 'doro', 'gemchan', 'spiki']), worldKey: z.string().regex(/^[a-zA-Z0-9:_-]{1,128}$/), serverAddress: z.string().min(1).max(255).nullable().default(null) }).strict() },
   { name: 'minecraft_status', description: 'Read connection, health, oxygen, inventory, active job, and controller status. Always inspect before acting.', schema: empty, readOnly: true },
@@ -45,10 +48,18 @@ export const definitions = [
 ];
 export const json = value => JSON.stringify(value, (_key, v) => typeof v === 'bigint' ? String(v) : v);
 export function toolSpec() { return definitions.map(d => ({ type: 'function', name: d.name, description: d.description, inputSchema: z.toJSONSchema(d.schema, { target: 'draft-7' }) })); }
-export async function dispatch(runtime, toolName, input = {}, { speechCharacterId = runtime.store.data.helper?.characterId } = {}) {
+export async function dispatch(runtime, toolName, input = {}, { speechCharacterId = runtime.store.data.helper?.characterId, origin = 'owner' } = {}) {
   const d = definitions.find(d => d.name === toolName); if (!d) throw new Error(`Unknown tool ${toolName}`);
   const a = d.schema.parse(input); const store = runtime.store;
+  if (origin === 'autonomy') {
+    const allowed = ['minecraft_status', 'minecraft_observe', 'minecraft_helpers', 'minecraft_job', 'minecraft_events', 'minecraft_plan', 'minecraft_chat', 'minecraft_action', 'minecraft_stop'];
+    if (!allowed.includes(toolName)) throw new Error('Requires an actual owner request. Autonomous turns cannot change control settings, identity or owner messages.');
+    if (['minecraft_action', 'minecraft_chat'].includes(toolName) && (!runtime.autonomy.available() || store.data.messages.some(m => ['pending', 'sending', 'uncertain'].includes(m.status)))) throw new Error('Autonomy paused or an owner message is waiting.');
+    if (toolName === 'minecraft_action' && ((a.action.type === 'enchant' && a.action.choice !== null) || a.action.type === 'anvil' || (a.action.type === 'interact' && ['attack', 'activate'].includes(a.action.action)))) throw new Error('Spending experience or combat/activation requires an owner request.');
+  }
   switch (toolName) {
+    case 'minecraft_autonomy': return Object.keys(a).length ? runtime.autonomy.configure(a) : runtime.autonomy.status();
+    case 'minecraft_plan': return runtime.autonomy.updatePlan(a);
     case 'minecraft_helpers': return helperStatus(runtime);
     case 'minecraft_select_helper': return selectHelper(runtime, a);
     case 'minecraft_status': return runtime.snapshot();
@@ -60,7 +71,9 @@ export async function dispatch(runtime, toolName, input = {}, { speechCharacterI
     case 'minecraft_action': {
       if (a.action.type === 'container' && a.action.direction !== 'inspect' && !a.action.item) throw new Error('Transfer requires item.');
       if (a.action.type === 'build') { const positions = a.action.blocks.map(p => `${Math.floor(p.x)},${Math.floor(p.y)},${Math.floor(p.z)}`); if (new Set(positions).size !== positions.length) throw new Error('Duplicate blueprint positions.'); }
-      const { type, ...args } = a.action; return runtime.action(type, args);
+      const { type, ...args } = a.action; const job = runtime.action(type, args); job.origin = origin;
+      if (origin === 'autonomy') job.autonomyKey = runtime.autonomy.key();
+      store.save(); return job;
     }
     case 'minecraft_job': return runtime.jobs.get(a.id);
     case 'minecraft_events': {
@@ -71,6 +84,6 @@ export async function dispatch(runtime, toolName, input = {}, { speechCharacterI
     case 'minecraft_inbox': return { messages: store.data.messages.filter(m => ['pending', 'uncertain'].includes(m.status)) };
     case 'minecraft_acknowledge': return store.updateMessage(a.id, { status: a.status });
     case 'minecraft_owner_message': return store.message({ id: a.id, text: a.text, owner: runtime.config.owner.uuid || 'local-owner', source: 'codex', status: a.forward ? 'pending' : 'delivered' });
-    case 'minecraft_chat': return runtime.say(a.text, { characterId: speechCharacterId });
+    case 'minecraft_chat': return origin === 'autonomy' ? runtime.autonomy.say(a.text, speechCharacterId) : runtime.say(a.text, { characterId: speechCharacterId });
   }
 }

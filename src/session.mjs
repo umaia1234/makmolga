@@ -36,5 +36,6 @@ export async function ensureSession(config, services, { timeoutMs = 180000, inte
   return { ready: true, mode: session.runtime.activeJob || session.controller.activeTurn || session.runtime.pendingMessages ? 'working' : 'waiting_for_owner_chat',
     reusedRuntime, pid: session.pid, server: session.server, owner: session.owner,
     helper: session.runtime.helper, controller: session.controller, bot: session.runtime.bot,
-    activeJob: session.runtime.activeJob, pendingMessages: session.runtime.pendingMessages };
+    activeJob: session.runtime.activeJob, pendingMessages: session.runtime.pendingMessages,
+    autonomy: session.runtime.autonomy ?? { enabled: false, active: false }, vision: session.runtime.vision ?? { available: false } };
 }

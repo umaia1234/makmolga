@@ -19,11 +19,14 @@ export async function serve(runtime, controller) {
     if (!sameToken(String(req.headers.authorization || ''), `Bearer ${runtime.store.token}`)) return reply(401, { error: 'Unauthorized' });
     if (req.method !== 'POST' || req.url !== '/call') return reply(404, { error: 'Not found' });
     let raw = ''; let oversized = false;
-    req.on('data', chunk => { raw += chunk; if (Buffer.byteLength(raw) > 262144) { oversized = true; reply(413, { error: 'Request too large' }); req.destroy(); } });
+    req.on('data', chunk => { raw += chunk; if (Buffer.byteLength(raw) > 2097152) { oversized = true; reply(413, { error: 'Request too large' }); req.destroy(); } });
     req.on('end', async () => {
       if (oversized) return;
       try {
         const body = JSON.parse(raw);
+        if (body.name === 'companion_vision_poll') return reply(200, { result: runtime.vision.poll(body.arguments) });
+        if (body.name === 'companion_vision_frame') return reply(200, { result: runtime.vision.accept(body.arguments) });
+        if (Buffer.byteLength(raw) > 262144) throw new Error('Request too large');
         // Host lifecycle calls deliberately stay outside the model's Minecraft tool bundle.
         if (body.name === 'companion_session') return reply(200, { result: session() });
         if (body.name === 'companion_prepare') {

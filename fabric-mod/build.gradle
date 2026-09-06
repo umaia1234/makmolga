@@ -2,7 +2,7 @@ plugins {
     id 'net.fabricmc.fabric-loom' version '1.17.20'
 }
 
-version = '0.2.3'
+version = '0.3.0'
 group = 'local.companion'
 base { archivesName = 'companion-selector-26.2' }
 
@@ -21,6 +21,11 @@ loom {
         client {
             client()
             runDir '../work/fabric-client'
+            if (project.hasProperty('testServer')) {
+                runDir '../work/vision-client'
+                programArgs '--quickPlayMultiplayer', project.property('testServer'), '--username', 'VisionObserver'
+                vmArg '-Dcompanion.visionTest=true'
+            }
             programArgs '--width', '1280', '--height', '800'
             if (project.hasProperty('assetsDir')) { programArgs '--assetsDir', project.property('assetsDir'), '--assetIndex', '32' }
             if (project.hasProperty('selectorPreview')) {

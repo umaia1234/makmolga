@@ -23,7 +23,7 @@ test('actual MCP stdio client discovers tools and controls the persistent runtim
   const client = new Client({ name: 'companion-test', version: '1.0.0' });
   const transport = new StdioClientTransport({ command: process.execPath, args: [path.join(ROOT, 'src/mcp.mjs')], env: { ...process.env, COMPANION_RUNTIME: store.dir }, stderr: 'pipe' });
   t.after(() => client.close()); await client.connect(transport);
-  const list = await client.listTools(); assert.equal(list.tools.length, 15);
+  const list = await client.listTools(); assert.equal(list.tools.length, 17);
   const result = await client.callTool({ name: 'minecraft_status', arguments: {} }); assert.equal(JSON.parse(result.content[0].text).bot.health, 20);
   const action = await client.callTool({ name: 'minecraft_action', arguments: { action: { type: 'control', keys: ['forward'], milliseconds: 1000 } } });
   const jobId = JSON.parse(action.content[0].text).id;

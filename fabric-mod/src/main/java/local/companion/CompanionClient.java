@@ -46,11 +46,12 @@ public final class CompanionClient implements ClientModInitializer {
             joined = true; prompted = false; worldKey = null; joinTicks = 0; retryAt = 0;
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            VisionCapture.INSTANCE.clear();
             appearance.clear();
             joined = false; worldKey = null; prompted = false; retryAt = 0;
         });
         ClientTickEvents.END_CLIENT_TICK.register(this::tick);
-        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> bridge.close());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(client -> { VisionCapture.INSTANCE.close(); bridge.close(); });
         ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> {
             if (screen instanceof PauseScreen pause && pause.showsPauseMenu()) {
                 Screens.getWidgets(screen).add(Button.builder(Component.literal("LLM 도우미 선택하기"), b -> open(screen))
@@ -69,6 +70,7 @@ public final class CompanionClient implements ClientModInitializer {
         }
         if (!joined || client.level == null || client.player == null) return;
         if (worldKey == null) resolveWorld(client);
+        VisionCapture.INSTANCE.tick(client, this);
         while (selectorKey.consumeClick()) if (client.gui.screen() == null) open(null);
         if (++joinTicks >= 20 && !prompted && client.gui.screen() == null && client.player.isAlive()) {
             prompted = true;

@@ -47,5 +47,20 @@
     "replyInGame": true,
     "maxTurnsPerHour": 30,
     "idleTimeoutSeconds": 300
+  },
+  "autonomy": {
+    "enabled": false,
+    "intervalSeconds": 90,
+    "maxTurnsPerHour": 24,
+    "chatIntervalSeconds": 25,
+    "playfulRefusals": true,
+    "refusalChance": 0.18,
+    "refusalCooldownSeconds": 600
+  },
+  "vision": {
+    "enabled": false,
+    "intervalSeconds": 45,
+    "maxAgeSeconds": 120,
+    "size": 384
   }
 }

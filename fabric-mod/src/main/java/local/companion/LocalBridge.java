@@ -79,5 +79,30 @@ public final class LocalBridge {
             completion.accept(result);
         });
     }
+    public void exchange(String runtimeDirectory, String name, JsonObject args, Consumer<JsonObject> completion) {
+        executor.execute(() -> {
+            try {
+                Path directory = Path.of(runtimeDirectory);
+                if (!directory.isAbsolute()) throw new IOException("Absolute runtime directory required");
+                if (Files.isDirectory(directory.resolve("runtime"))) directory = directory.resolve("runtime");
+                String token = Files.readString(directory.resolve("api-token")).trim();
+                if (!token.matches("[a-fA-F0-9]{64}")) throw new IOException("Invalid local credential");
+                var endpoint = JsonParser.parseString(Files.readString(directory.resolve("endpoint.json"))).getAsJsonObject();
+                var body = new JsonObject(); body.addProperty("name", name); body.add("arguments", args);
+                var request = HttpRequest.newBuilder(localEndpoint(endpoint.get("url").getAsString())).timeout(Duration.ofSeconds(3))
+                    .header("Authorization", "Bearer " + token).header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8)).build();
+                var response = http.send(request, HttpResponse.BodyHandlers.ofInputStream());
+                try (var stream = response.body()) {
+                    byte[] bytes = stream.readNBytes(131073);
+                    if (bytes.length > 131072 || response.statusCode() != 200) throw new IOException("Bridge request rejected");
+                    completion.accept(JsonParser.parseString(new String(bytes, StandardCharsets.UTF_8)).getAsJsonObject().getAsJsonObject("result"));
+                }
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+                completion.accept(null);
+            }
+        });
+    }
     public void close() { executor.shutdownNow(); http.close(); }
 }

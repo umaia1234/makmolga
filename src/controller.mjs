@@ -40,6 +40,10 @@ export class Controller {
   async initialize() {
     if (!this.runtime.config.owner.uuid) throw new Error('Set owner.uuid before enabling the controller.');
     await this.rpc.connect(this.config, ROOT);
+    if (this.store.data.controller.toolSchemaVersion !== 2) {
+      this.store.data.controller.previousCharacterThreads = this.store.data.controller.characterThreads || {};
+      this.store.data.controller.characterThreads = {}; this.store.data.controller.toolSchemaVersion = 2; this.store.save();
+    }
     await this.selectCharacterThread();
     if (this.closed || this.fault) throw new Error('Controller closed while starting.');
     this.started = true; this.store.event('controller_ready', { threadId: this.threadId, transport: this.config.transport });
@@ -93,7 +97,21 @@ export class Controller {
   }
   async pump() {
     if (this.closed || this.sending || this.fault) return;
-    const message = this.store.data.messages.find(m => m.status === 'pending'); if (!message) return;
+    const message = this.store.data.messages.find(m => m.status === 'pending');
+    const auto = this.runtime.autonomy;
+    const activeJob = this.runtime.jobs.active?.job;
+    if (activeJob?.origin === 'autonomy' && (!auto.available() || activeJob.autonomyKey !== auto.key())) this.runtime.jobs.cancel('Autonomy paused or character/world changed');
+    if (this.activeTurn && auto.turn(this.activeTurn)?.origin === 'autonomy' &&
+        (message || !auto.available() || auto.turn(this.activeTurn)?.key !== auto.key())) {
+      if (this.interrupting !== this.activeTurn) {
+        this.interrupting = this.activeTurn;
+        if (this.runtime.jobs.active?.job.origin === 'autonomy') this.runtime.jobs.cancel('Owner request or autonomy pause');
+        try { await this.rpc.request('turn/interrupt', { threadId: this.threadId, turnId: this.activeTurn }); }
+        catch (error) { this.fault = true; this.store.event('autonomy_interrupt_failed', { error: error.message }); }
+      }
+      return;
+    }
+    if (!message) { if (!this.activeTurn && auto.due()) await this.pumpAutonomy(); return; }
     this.sending = true;
     try {
       if (!this.started) await this.start();
@@ -111,11 +129,13 @@ export class Controller {
       const params = { threadId: this.threadId, clientUserMessageId: message.id, input: [{ type: 'text', text: message.text, text_elements: [] }] };
       const voice = this.activeTurn ? this.voiceForTurn(this.activeTurn) : this.store.data.helper?.characterId ?? null;
       this.pendingVoice = voice;
+      this.pendingOrigin = 'owner';
       try {
         const result = this.activeTurn
           ? await this.rpc.request('turn/steer', { ...params, expectedTurnId: this.activeTurn })
-          : await this.rpc.request('turn/start', { ...params, additionalContext: personaContext(this.store) });
+          : await this.rpc.request('turn/start', { ...params, input: [...params.input, ...this.runtime.vision.input()], additionalContext: { ...personaContext(this.store), companion_observation: auto.context(message) } });
         this.activeTurn = result.turn?.id || result.turnId || this.activeTurn;
+        auto.rememberTurn(this.activeTurn, 'owner');
         this.rememberVoice(this.activeTurn, voice);
         this.store.data.controller.activeHelperRevision = helperRevision;
         this.store.updateMessage(message.id, { status: 'delivered', turnId: this.activeTurn });
@@ -124,8 +144,29 @@ export class Controller {
         // A timeout may occur after acceptance. Preserve it for reconciliation; do not replay automatically.
         this.store.updateMessage(message.id, { status: 'uncertain', error: error.message });
         this.store.event('message_delivery_uncertain', { id: message.id, error: error.message });
-      } finally { this.pendingVoice = undefined; }
+      } finally { this.pendingVoice = undefined; this.pendingOrigin = undefined; }
     } finally { this.sending = false; }
+  }
+  async pumpAutonomy() {
+    this.sending = true;
+    const auto = this.runtime.autonomy;
+    try {
+      if (!this.started) await this.start();
+      await this.selectCharacterThread();
+      if (!auto.due() || this.activeTurn) return;
+      const id = auto.begin(), voice = this.store.data.helper.characterId, key = auto.key();
+      this.pendingOrigin = 'autonomy'; this.pendingVoice = voice;
+      const text = 'AUTONOMY_TICK: Scheduled companion reflection, not a message from the owner. Inspect current observations, reconcile your saved plan with actual jobs, choose one small useful next step or rest. Save a concise decision with minecraft_plan. You may start a bounded chore and initiate brief in-character conversation via minecraft_chat when something is worth saying. Do not ask for work on every tick. Final text is private and will not be sent to game chat.';
+      const result = await this.rpc.request('turn/start', { threadId: this.threadId, clientUserMessageId: id,
+        input: [{ type: 'text', text, text_elements: [] }, ...this.runtime.vision.input()],
+        additionalContext: { ...personaContext(this.store), companion_observation: auto.context() } });
+      this.activeTurn = result.turn.id; auto.rememberTurn(this.activeTurn, 'autonomy', key);
+      this.rememberVoice(this.activeTurn, voice); this.store.data.controller.activeHelperRevision = this.store.data.helper.revision;
+      this.store.event('autonomy_turn_started', { turnId: this.activeTurn, key, vision: this.runtime.vision.status().available }); this.armDeadline();
+    } catch (error) {
+      // Acceptance may be ambiguous. Stop autonomous submissions until inspected/restarted.
+      this.fault = true; this.lastError = error.message; this.store.event('autonomy_delivery_uncertain', { error: error.message });
+    } finally { this.pendingVoice = undefined; this.pendingOrigin = undefined; this.sending = false; }
   }
   armDeadline() {
     clearTimeout(this.turnTimer); const turnId = this.activeTurn;
@@ -139,10 +180,13 @@ export class Controller {
   }
   async onNotification({ method, params = {} }) {
     if (!this.threadId || params.threadId !== this.threadId) return;
-    if (method === 'turn/started') { this.activeTurn = params.turn.id; this.rememberVoice(this.activeTurn, this.voiceForTurn(this.activeTurn)); this.armDeadline(); }
+    if (method === 'turn/started') { this.activeTurn = params.turn.id;
+      if (this.pendingOrigin) this.runtime.autonomy.rememberTurn(this.activeTurn, this.pendingOrigin);
+      this.rememberVoice(this.activeTurn, this.voiceForTurn(this.activeTurn)); this.armDeadline(); }
     if (method === 'turn/completed' && params.turn.id === this.activeTurn) { this.activeTurn = null; clearTimeout(this.turnTimer); this.store.event('controller_turn_completed', { turnId: params.turn.id, status: params.turn.status }); }
     if (method === 'item/completed' && params.item?.type === 'userMessage') {
       const item = params.item; const id = item.clientId || item.id;
+      if (Object.hasOwn(this.runtime.autonomy.data.internalMessages, id) || this.runtime.autonomy.turn(params.turnId || this.activeTurn)?.origin === 'autonomy' || this.pendingOrigin === 'autonomy') return;
       const text = item.content.filter(c => c.type === 'text').map(c => c.text).join('\n');
       if (text) this.store.message({ id, text, source: 'codex', owner: this.runtime.config.owner.uuid, status: 'delivered' });
     }
@@ -152,12 +196,21 @@ export class Controller {
       const characterId = this.voiceForTurn(params.turnId || this.activeTurn || this.store.data.controller.lastSpeechTurnId);
       const text = characterSpeech(characterId, item.text);
       this.store.event('controller_reply', { threadId: this.threadId, characterId, text, ...(text !== item.text ? { modelText: item.text } : {}) });
-      if (this.config.replyInGame && this.runtime.connection === 'connected') await this.runtime.say(text, { characterId });
+      const origin = this.runtime.autonomy.turn(params.turnId || this.activeTurn || this.store.data.controller.lastSpeechTurnId)?.origin;
+      if (!this.fault && !this.closed && origin !== 'autonomy' && this.config.replyInGame && this.runtime.connection === 'connected') await this.runtime.say(text, { characterId });
     }
   }
   async onRequest({ id, method, params = {} }) {
     if (method === 'item/tool/call' && params.threadId === this.threadId) {
-      try { const speechCharacterId = this.voiceForTurn(params.turnId || this.activeTurn || this.store.data.controller.lastSpeechTurnId); const result = await dispatch(this.runtime, params.tool, params.arguments, { speechCharacterId }); this.rpc.respond(id, { success: true, contentItems: [{ type: 'inputText', text: json(result) }] }); }
+      try {
+        if (this.closed || this.fault) throw new Error('Controller is closed or faulted. Inspect before resuming.');
+        const turnId = params.turnId || this.activeTurn || this.store.data.controller.lastSpeechTurnId;
+        const frame = this.runtime.autonomy.turn(turnId);
+        if (frame?.origin === 'autonomy' && (turnId !== this.activeTurn || this.interrupting === turnId || frame.key !== this.runtime.autonomy.key())) throw new Error('Autonomous turn is no longer current.');
+        const speechCharacterId = this.voiceForTurn(turnId);
+        const result = await dispatch(this.runtime, params.tool, params.arguments, { speechCharacterId, origin: frame?.origin || this.pendingOrigin || 'owner' });
+        this.rpc.respond(id, { success: true, contentItems: [{ type: 'inputText', text: json(result) }] });
+      }
       catch (error) { this.rpc.respond(id, { success: false, contentItems: [{ type: 'inputText', text: error.message }] }); }
     } else if (method === 'item/commandExecution/requestApproval' || method === 'item/fileChange/requestApproval') {
       this.rpc.respond(id, { decision: 'decline' }); this.store.event('controller_approval_required', { method });

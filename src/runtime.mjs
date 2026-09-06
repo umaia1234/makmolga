@@ -6,6 +6,8 @@ import { perform, itemView, blockView, vec } from './actions.mjs';
 import { ownerChat, chatLines } from './chat.mjs';
 import { characterName, characterSpeech } from './voice.mjs';
 import { ProxyProcess } from './proxy.mjs';
+import { Autonomy } from './autonomy.mjs';
+import { Vision } from './vision.mjs';
 const { pathfinder, Movements } = pathfinderPackage;
 const foods = ['cooked_beef', 'cooked_porkchop', 'cooked_chicken', 'cooked_mutton', 'cooked_rabbit', 'bread', 'baked_potato', 'cooked_salmon', 'cooked_cod', 'carrot', 'apple', 'dried_kelp', 'melon_slice', 'sweet_berries'];
 
@@ -15,6 +17,9 @@ export class Runtime {
     this.halted = store.data.pausedOnRestart || null; this.intentional = false; this.attempt = 0; this.generation = 0; this.chatChain = Promise.resolve();
     this.proxy = new ProxyProcess(config, store);
     this.jobs = new Jobs(store, () => this.clearControls(), reason => this.disconnect(reason));
+    this.autonomy = new Autonomy(this); this.vision = new Vision(this);
+    this.ownerListener = e => { if (e.type === 'owner_message') this.autonomy.ownerControl(e.message); };
+    store.on('event', this.ownerListener);
     this.guard = setInterval(() => { try { this.guardian(); } catch (e) { this.store.event('guardian_error', { error: e.message }); this.disconnect('Guardian error'); } }, 200);
   }
   async connect() {
@@ -110,7 +115,8 @@ export class Runtime {
     const b = this.bot;
     return { connection: this.connection, halted: this.halted, targetVersion: this.config.minecraft.targetVersion, clientVersion: this.config.minecraft.clientVersion, translation: this.config.proxy.enabled ? `ViaProxy ${this.config.minecraft.clientVersion} → ${this.config.minecraft.targetVersion}; new content may be remapped` : null,
       bot: b?.entity ? { username: b.username, position: b.entity.position, yaw: b.entity.yaw, pitch: b.entity.pitch, health: b.health, food: b.food, oxygen: b.oxygenLevel, inWater: !!b.entity.isInWater, onGround: b.entity.onGround, dimension: b.game?.dimension, level: b.experience?.level, time: b.time?.timeOfDay, inventory: b.inventory?.items().map(itemView) ?? [] } : null,
-      activeJob: this.jobs.active?.job ?? null, helper: this.store.data.helper ?? null, controller: this.store.data.controller, pendingMessages: this.store.data.messages.filter(m => ['pending', 'uncertain'].includes(m.status)).length };
+      activeJob: this.jobs.active?.job ?? null, helper: this.store.data.helper ?? null, controller: this.store.data.controller,
+      autonomy: this.autonomy.status(), vision: this.vision.status(), pendingMessages: this.store.data.messages.filter(m => ['pending', 'uncertain'].includes(m.status)).length };
   }
   observe({ radius = 16, blocks = [], count = 32 } = {}) {
     const b = this.requireBot();
@@ -124,5 +130,5 @@ export class Runtime {
     const send = async () => { for (const line of chatLines(speech, 8, characterName(characterId), line => characterSpeech(characterId, line))) { if (this.bot !== b || this.connection !== 'connected') throw new Error('Chat connection ended'); b.chat(line); await delay(600); } return { sent: true, text: speech, characterId, displayName: characterName(characterId) }; };
     const result = this.chatChain.then(send, send); this.chatChain = result.catch(() => {}); return result;
   }
-  close() { clearInterval(this.guard); this.store.data.pausedOnRestart = this.halted; this.store.save(); this.disconnect('Companion stopped'); this.proxy.stop(); }
+  close() { clearInterval(this.guard); this.store.removeListener('event', this.ownerListener); this.store.data.pausedOnRestart = this.halted; this.store.save(); this.disconnect('Companion stopped'); this.proxy.stop(); }
 }
