@@ -97,7 +97,7 @@ MCP 모드에서는 **현재 Codex 대화에서 제가 직접 제어**할 수 �
 
 ## 자동 LLM 컨트롤러와 두 채팅 공유
 
-Codex App Server에 연결하는 컨트롤러를 구현했습니다. **게임 소유자 채팅과 해당 Codex 컨트롤러의 채팅을 같은 `threadId`의 사용자 입력으로 전달**합니다. 사용 중인 일반 Desktop 대화와 자동 병합하는 기능은 아닙니다.
+Codex App Server에 연결하는 컨트롤러를 구현했습니다. **게임 소유자 채팅과 해당 Codex 컨트롤러의 채팅을 현재 캐릭터의 같은 `threadId`에 사용자 입력으로 전달**합니다. 대화 ID는 캐릭터별 `controller.characterThreads`에 저장하여 말투와 대화 기록을 분리하고, 공통 메시지 기록과 월드 상태는 유지합니다. 사용 중인 일반 Desktop 대화와 자동 병합하는 기능은 아닙니다.
 
 - 간단한 독립 실행: `controller.enabled=true`, `transport=stdio`. 첫 사용자 메시지에서 컨트롤러 대화를 만들고 ID를 `runtime/state.json`에 저장합니다. `npm run ctl -- chat "밭을 확인해 주세요"`와 게임의 `!봇 밭을 확인해 주세요`가 같은 대화를 사용합니다.
 - Codex CLI 채팅까지 실시간 공유: `transport=websocket`으로 설정하고 `node scripts/codex-server.mjs`를 실행합니다. 별도 터미널에서 `codex --remote ws://127.0.0.1:4500`으로 **같은 App Server**에 접속한 후, 저장된 컨트롤러 대화 ID를 엽니다. 컨트롤러와 CLI가 같은 서버·대화를 사용해야 합니다.

@@ -17,7 +17,7 @@ if (-not $env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME = Join-Path $PSScriptRoo
 $modRoot = Join-Path $PSScriptRoot 'fabric-mod'
 & (Join-Path $modRoot 'gradlew.bat') -p $modRoot build --console=plain
 if ($LASTEXITCODE -ne 0) { throw 'Mod build or tests failed.' }
-Write-Output "Built mod: $modRoot/build/libs/companion-selector-26.2-0.2.1.jar"
+Write-Output "Built mod: $modRoot/build/libs/companion-selector-26.2-0.2.3.jar"
 if ($Preview) {
     & (Join-Path $modRoot 'gradlew.bat') -p $modRoot runClient -PselectorPreview --console=plain
     if ($LASTEXITCODE -ne 0) { throw 'Preview client failed.' }

@@ -28,5 +28,5 @@ try {
   const config = loadConfig(); const store = new Store(dir); runtime = new Runtime(config, store); controller = new Controller(runtime); server = await serve(runtime, controller); controller.run();
   server.on('shutdownRequested', () => { void shutdown().then(() => process.exit()); });
   console.error(`Minecraft Companion ready on 127.0.0.1:${server.address().port}. Bot auto-connect: ${config.minecraft.autoConnect}; LLM controller: ${config.controller.enabled}.`);
-  if (config.minecraft.autoConnect) await runtime.connect();
+  if (config.minecraft.autoConnect && !runtime.halted) await runtime.connect();
 } catch (error) { console.error(error.message); await shutdown(); process.exitCode = 1; }

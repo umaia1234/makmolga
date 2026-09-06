@@ -4,7 +4,7 @@ import { ROOT } from './config.mjs';
 import { Rpc } from './rpc.mjs';
 import { dispatch, toolSpec, json } from './tools.mjs';
 import { personaContext } from './characters.mjs';
-import { characterSpeech } from './voice.mjs';
+import { characterSpeech, personaInstructions } from './voice.mjs';
 
 export class Controller {
   constructor(runtime, rpc = new Rpc()) {
@@ -25,10 +25,12 @@ export class Controller {
   status() {
     return { enabled: this.config.enabled, ready: this.config.enabled && this.started && !this.closed && !this.fault,
       starting: !!this.starting, fault: this.fault, closed: this.closed, activeTurn: this.activeTurn,
-      threadId: this.threadId || this.store.data.controller.threadId || null, rateLimited: !!this.rateLimited, error: this.lastError || null };
+      threadId: this.threadId || this.store.data.controller.threadId || null, characterId: this.characterKey === 'unselected' ? null : this.characterKey ?? null,
+      rateLimited: !!this.rateLimited, error: this.lastError || null };
   }
   async prepare() {
     await this.start();
+    if (!this.activeTurn) await this.selectCharacterThread();
     const account = await this.rpc.request('account/read', { refreshToken: false });
     if (account.requiresOpenaiAuth !== false && !account.account) {
       this.fault = true; this.lastError = 'Codex login is required. Sign in and restart the companion runtime.';
@@ -38,9 +40,29 @@ export class Controller {
   async initialize() {
     if (!this.runtime.config.owner.uuid) throw new Error('Set owner.uuid before enabling the controller.');
     await this.rpc.connect(this.config, ROOT);
-    const savedId = this.config.threadId || this.store.data.controller.threadId;
+    await this.selectCharacterThread();
+    if (this.closed || this.fault) throw new Error('Controller closed while starting.');
+    this.started = true; this.store.event('controller_ready', { threadId: this.threadId, transport: this.config.transport });
+  }
+  async selectCharacterThread() {
+    if (!this.switching && this.characterKey === (this.store.data.helper?.characterId || 'unselected')) return;
+    if (!this.switching) this.switching = this.bindCharacterThread().finally(() => { this.switching = null; });
+    await this.switching;
+    if (!this.activeTurn && this.characterKey !== (this.store.data.helper?.characterId || 'unselected')) await this.selectCharacterThread();
+  }
+  async bindCharacterThread() {
+    const characterId = this.store.data.helper?.characterId ?? null;
+    const key = characterId || 'unselected';
+    if (this.characterKey === key) return;
+    if (this.activeTurn) throw new Error('Finish the active character turn before changing its conversation.');
+    // Separate conversational memory for each persona; the common owner inbox
+    // and actual Minecraft world state remain shared.
+    const threads = this.store.data.controller.characterThreads || {};
+    if (!Object.keys(threads).length && this.store.data.controller.threadId && !this.store.data.controller.legacyThreadId)
+      this.store.data.controller.legacyThreadId = this.store.data.controller.threadId;
+    const savedId = threads[key] || (this.config.threadId && !Object.keys(threads).length ? this.config.threadId : null);
     let result;
-    const prompt = fs.readFileSync(path.join(ROOT, 'skills', 'minecraft-companion', 'references', 'controller-prompt.md'), 'utf8');
+    const prompt = fs.readFileSync(path.join(ROOT, 'skills', 'minecraft-companion', 'references', 'controller-prompt.md'), 'utf8') + '\n\n' + personaInstructions(characterId);
     if (savedId) {
       result = await this.rpc.request('thread/resume', { threadId: savedId, developerInstructions: prompt });
       // Only a thread created with this tool bundle is a supported standalone controller.
@@ -48,10 +70,11 @@ export class Controller {
     } else {
       result = await this.rpc.request('thread/start', { cwd: ROOT, ...(this.config.model ? { model: this.config.model } : {}), developerInstructions: prompt, dynamicTools: toolSpec(), environments: [], ephemeral: false, serviceName: 'minecraft-companion' });
     }
-    this.threadId = result.thread.id; this.store.data.controller.threadId = this.threadId; this.store.save();
+    this.threadId = result.thread.id; this.characterKey = key;
+    this.store.data.controller.characterThreads = { ...threads, [key]: this.threadId };
+    this.store.data.controller.threadId = this.threadId; this.store.save();
     const active = result.thread.turns?.findLast(t => t.status === 'inProgress'); if (active) this.activeTurn = active.id;
-    if (this.closed || this.fault) throw new Error('Controller closed while starting.');
-    this.started = true; this.store.event('controller_ready', { threadId: this.threadId, transport: this.config.transport });
+    this.store.event('controller_character_ready', { characterId, threadId: this.threadId });
   }
   run() {
     if (!this.config.enabled) return;
@@ -77,6 +100,7 @@ export class Controller {
       const helperRevision = this.store.data.helper?.revision || 0;
       // Finish the current character's reply before starting the newly selected character.
       if (this.activeTurn && helperRevision !== (this.store.data.controller.activeHelperRevision || 0)) return;
+      if (!this.activeTurn) await this.selectCharacterThread();
       const recent = (this.store.data.controller.requests || []).filter(t => Date.now() - t < 3600000);
       if (recent.length >= this.config.maxTurnsPerHour) {
         if (!this.rateLimited) { this.rateLimited = true; this.store.event('controller_rate_limited'); } return;

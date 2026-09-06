@@ -13,10 +13,13 @@ export function ownerChat(config, packet, players = {}) {
   const identity = packet.signature ? Buffer.from(packet.signature).toString('hex') : null;
   return { ...(identity ? { id: createHash('sha256').update(`${packet.sender}:${identity}`).digest('hex') } : {}), text, source: 'minecraft', owner: config.owner.uuid };
 }
-export function chatLines(text, maxLines = 8) {
+export function chatLines(text, maxLines = 8, label = '봇', format = value => value) {
   const clean = String(text).replace(/§./g, '').replace(/[\x00-\x1f\x7f]/g, ' ').replace(/\s+/g, ' ').trim();
   const chars = Array.from(clean); const lines = [];
-  for (let i = 0; i < chars.length && lines.length < maxLines; i += 180) lines.push(`[봇] ${chars.slice(i, i + 180).join('')}`);
-  if (chars.length > maxLines * 180) lines[lines.length - 1] += ' … (전체 답변은 Codex에서 확인)';
+  for (let i = 0; i < chars.length && lines.length < maxLines; i += 180) {
+    let body = chars.slice(i, i + 180).join('');
+    if (lines.length === maxLines - 1 && chars.length > maxLines * 180) body += ' … (전체 답변은 Codex에서 확인)';
+    lines.push(`[${label}] ${format(body)}`);
+  }
   return lines;
 }

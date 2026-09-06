@@ -4,7 +4,7 @@ import pathfinderPackage from 'mineflayer-pathfinder';
 import { Jobs, delay } from './jobs.mjs';
 import { perform, itemView, blockView, vec } from './actions.mjs';
 import { ownerChat, chatLines } from './chat.mjs';
-import { characterSpeech } from './voice.mjs';
+import { characterName, characterSpeech } from './voice.mjs';
 import { ProxyProcess } from './proxy.mjs';
 const { pathfinder, Movements } = pathfinderPackage;
 const foods = ['cooked_beef', 'cooked_porkchop', 'cooked_chicken', 'cooked_mutton', 'cooked_rabbit', 'bread', 'baked_potato', 'cooked_salmon', 'cooked_cod', 'carrot', 'apple', 'dried_kelp', 'melon_slice', 'sweet_berries'];
@@ -12,7 +12,7 @@ const foods = ['cooked_beef', 'cooked_porkchop', 'cooked_chicken', 'cooked_mutto
 export class Runtime {
   constructor(config, store, factory = mineflayer.createBot) {
     this.config = config; this.store = store; this.factory = factory; this.bot = null; this.connection = 'disconnected';
-    this.halted = null; this.intentional = false; this.attempt = 0; this.generation = 0; this.chatChain = Promise.resolve();
+    this.halted = store.data.pausedOnRestart || null; this.intentional = false; this.attempt = 0; this.generation = 0; this.chatChain = Promise.resolve();
     this.proxy = new ProxyProcess(config, store);
     this.jobs = new Jobs(store, () => this.clearControls(), reason => this.disconnect(reason));
     this.guard = setInterval(() => { try { this.guardian(); } catch (e) { this.store.event('guardian_error', { error: e.message }); this.disconnect('Guardian error'); } }, 200);
@@ -23,7 +23,7 @@ export class Runtime {
     if (!mcData(c.minecraft.clientVersion)) throw new Error(`No protocol data for ${c.minecraft.clientVersion}.`);
     if (!mineflayer.testedVersions.includes(c.minecraft.clientVersion)) throw new Error('Client version is not in the installed Mineflayer supported list.');
     if (!c.proxy.enabled && c.minecraft.targetVersion !== c.minecraft.clientVersion) throw new Error('A version translation proxy is required for this target.');
-    this.connection = 'connecting'; this.intentional = false; this.halted = null;
+    this.connection = 'connecting'; this.intentional = false; this.halted = null; this.store.data.pausedOnRestart = null; this.store.save();
     const generation = ++this.generation;
     try {
       await this.proxy.start();
@@ -78,7 +78,7 @@ export class Runtime {
     this.requireBot();
     if (this.jobs.active) throw new Error('Wait for the cancelled action to settle.');
     if (this.bot.health < this.config.safety.minHealth || this.bot.entity.isInWater || this.bot.entity.isInLava) throw new Error('Unsafe state. Recover health / leave water before resuming work.');
-    this.halted = null; return this.snapshot();
+    this.halted = null; this.store.data.pausedOnRestart = null; this.store.save(); return this.snapshot();
   }
   disconnect(reason = 'Disconnected by owner') {
     if (this.intentional && this.connection === 'disconnected') return { disconnected: true };
@@ -121,8 +121,8 @@ export class Runtime {
   }
   async say(text, { characterId = this.store.data.helper?.characterId } = {}) {
     this.requireBot(); const b = this.bot; const speech = characterSpeech(characterId, text);
-    const send = async () => { for (const line of chatLines(speech)) { if (this.bot !== b || this.connection !== 'connected') throw new Error('Chat connection ended'); b.chat(line); await delay(600); } return { sent: true, text: speech }; };
+    const send = async () => { for (const line of chatLines(speech, 8, characterName(characterId), line => characterSpeech(characterId, line))) { if (this.bot !== b || this.connection !== 'connected') throw new Error('Chat connection ended'); b.chat(line); await delay(600); } return { sent: true, text: speech, characterId, displayName: characterName(characterId) }; };
     const result = this.chatChain.then(send, send); this.chatChain = result.catch(() => {}); return result;
   }
-  close() { clearInterval(this.guard); this.disconnect('Companion stopped'); this.proxy.stop(); }
+  close() { clearInterval(this.guard); this.store.data.pausedOnRestart = this.halted; this.store.save(); this.disconnect('Companion stopped'); this.proxy.stop(); }
 }

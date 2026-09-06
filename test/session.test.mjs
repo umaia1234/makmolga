@@ -5,6 +5,8 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { ensureSession } from '../src/session.mjs';
 import { ROOT } from '../src/config.mjs';
+import { Runtime } from '../src/runtime.mjs';
+import { Store } from '../src/store.mjs';
 import { atomicJson } from '../src/store.mjs';
 import { testConfig, tempDir } from './helpers.mjs';
 
@@ -62,6 +64,14 @@ test('an occupied or unavailable server cannot cause the runtime to start', asyn
   const { config, calls, services } = setup(); services.probe = async () => null; services.runtimeAlive = async () => false;
   services.ensureServer = async () => { throw new Error('Port belongs to a different service'); };
   await assert.rejects(ensureSession(config, services), /different service/); assert.deepEqual(calls, []);
+});
+
+test('updating a paused runtime preserves its stop reason across a graceful restart', () => {
+  const dir = tempDir(); const first = new Runtime(testConfig(), new Store(dir));
+  first.disconnect('Critical health or lava'); first.close();
+  const second = new Runtime(testConfig(), new Store(dir));
+  try { assert.equal(second.snapshot().halted, 'Critical health or lava'); assert.equal(second.connection, 'disconnected'); }
+  finally { second.close(); }
 });
 
 test('installed skill resolves its registered project from an unrelated working directory', () => {

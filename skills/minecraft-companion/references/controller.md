@@ -26,7 +26,9 @@ Fabric 선택창이 저장한 캐릭터는 `turn/start.additionalContext.compani
 
 ### stdio
 
-`controller.transport="stdio"`는 프로그램이 `codex app-server --listen stdio://` 자식 프로세스를 실행합니다. 컨트롤러용 새 대화는 첫 메시지를 전달할 때 만들어지고 ID를 저장합니다. 이 ID가 다음 시작에도 재사용됩니다. 게임과 `ctl chat`가 같은 대화 이력을 사용합니다. 실행 중인 이 stdio 연결에 별도 Desktop 대화를 붙이는 방식은 지원하지 않습니다.
+`controller.transport="stdio"`는 프로그램이 `codex app-server --listen stdio://` 자식 프로세스를 실행합니다. 컨트롤러용 대화는 시작 준비 또는 첫 메시지 전달 시 만들어집니다. 현재 소스는 캐릭터별 ID를 `runtime/state.json`의 `controller.characterThreads`에 저장하고 다음 선택·시작 때 재사용합니다. 같은 캐릭터의 게임 채팅과 `ctl chat`는 같은 대화 이력을 사용하며, `controller.threadId`는 현재 사용 중인 ID입니다. 이전 공용 대화는 삭제하지 않고 `legacyThreadId`에 남깁니다. 명시적인 `controller.threadId` 설정은 첫 캐릭터 대화를 가져올 때 사용합니다. 실행 중인 이 stdio 연결에 별도 Desktop 대화를 붙이는 방식은 지원하지 않습니다.
+
+캐릭터의 명확한 정체성과 말투 지시는 `src/voice.mjs`의 `personaInstructions`에서 생성하여 해당 대화의 developer instructions에 포함합니다. 긴 페르소나 문서는 성격 참고 자료로 분리합니다. 대화 전환은 진행 중인 턴이 끝난 후에 일어나며, 다른 캐릭터의 이전 대화에서 늦게 도착한 채팅·도구 요청은 현재 대화에 섞지 않습니다. [채팅 표시와 페르소나](../../../docs/CHAT-AND-PERSONAS.md)
 
 ### 공유 WebSocket + Codex CLI
 
