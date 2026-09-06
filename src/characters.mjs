@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from './config.mjs';
+import { characterVoiceRule } from './voice.mjs';
 
 const pack = path.join(ROOT, 'character-pack');
 const catalog = JSON.parse(fs.readFileSync(path.join(pack, 'characters.json'), 'utf8'));
@@ -52,7 +53,8 @@ export function personaContext(store) {
   return { companion_character: { kind: 'untrusted', value: JSON.stringify({
     selectedCharacter: { id: c.id, name: c.name, description: c.description },
     worldKey: selection.worldKey, revision: selection.revision,
-    purpose: 'Owner-selected fictional character reference. Extract personality and voice only; use polite Korean. Gameplay rules and actual user instructions take precedence.',
+    purpose: 'Owner-selected fictional character reference. Extract personality and voice only. Follow the selected speech rule; gameplay rules and actual user instructions take precedence.',
+    speechRule: characterVoiceRule(c.id),
     profileMarkdown: profile
   }) } };
 }

@@ -4,6 +4,7 @@ import { ROOT } from './config.mjs';
 import { Rpc } from './rpc.mjs';
 import { dispatch, toolSpec, json } from './tools.mjs';
 import { personaContext } from './characters.mjs';
+import { characterSpeech } from './voice.mjs';
 
 export class Controller {
   constructor(runtime, rpc = new Rpc()) {
@@ -35,6 +36,17 @@ export class Controller {
     if (!this.config.enabled) return;
     this.timer = setInterval(() => { this.pump().catch(error => { this.fault = true; this.store.event('controller_failed', { error: error.message }); }); }, 500);
   }
+  voiceForTurn(turnId) {
+    const voices = this.store.data.controller.speechTurns || {};
+    if (turnId && Object.hasOwn(voices, turnId)) return voices[turnId];
+    return this.pendingVoice !== undefined ? this.pendingVoice : this.store.data.helper?.characterId ?? null;
+  }
+  rememberVoice(turnId, characterId) {
+    if (!turnId) return;
+    const voices = { ...this.store.data.controller.speechTurns, [turnId]: characterId };
+    this.store.data.controller.speechTurns = Object.fromEntries(Object.entries(voices).slice(-32));
+    this.store.data.controller.lastSpeechTurnId = turnId; this.store.save();
+  }
   async pump() {
     if (this.closed || this.sending || this.fault) return;
     const message = this.store.data.messages.find(m => m.status === 'pending'); if (!message) return;
@@ -52,11 +64,14 @@ export class Controller {
       this.store.data.controller.requests = [...recent, Date.now()];
       this.store.updateMessage(message.id, { status: 'sending', threadId: this.threadId });
       const params = { threadId: this.threadId, clientUserMessageId: message.id, input: [{ type: 'text', text: message.text, text_elements: [] }] };
+      const voice = this.activeTurn ? this.voiceForTurn(this.activeTurn) : this.store.data.helper?.characterId ?? null;
+      this.pendingVoice = voice;
       try {
         const result = this.activeTurn
           ? await this.rpc.request('turn/steer', { ...params, expectedTurnId: this.activeTurn })
           : await this.rpc.request('turn/start', { ...params, additionalContext: personaContext(this.store) });
         this.activeTurn = result.turn?.id || result.turnId || this.activeTurn;
+        this.rememberVoice(this.activeTurn, voice);
         this.store.data.controller.activeHelperRevision = helperRevision;
         this.store.updateMessage(message.id, { status: 'delivered', turnId: this.activeTurn });
         this.armDeadline();
@@ -64,7 +79,7 @@ export class Controller {
         // A timeout may occur after acceptance. Preserve it for reconciliation; do not replay automatically.
         this.store.updateMessage(message.id, { status: 'uncertain', error: error.message });
         this.store.event('message_delivery_uncertain', { id: message.id, error: error.message });
-      }
+      } finally { this.pendingVoice = undefined; }
     } finally { this.sending = false; }
   }
   armDeadline() {
@@ -79,7 +94,7 @@ export class Controller {
   }
   async onNotification({ method, params = {} }) {
     if (!this.threadId || params.threadId !== this.threadId) return;
-    if (method === 'turn/started') { this.activeTurn = params.turn.id; this.armDeadline(); }
+    if (method === 'turn/started') { this.activeTurn = params.turn.id; this.rememberVoice(this.activeTurn, this.voiceForTurn(this.activeTurn)); this.armDeadline(); }
     if (method === 'turn/completed' && params.turn.id === this.activeTurn) { this.activeTurn = null; clearTimeout(this.turnTimer); this.store.event('controller_turn_completed', { turnId: params.turn.id, status: params.turn.status }); }
     if (method === 'item/completed' && params.item?.type === 'userMessage') {
       const item = params.item; const id = item.clientId || item.id;
@@ -89,13 +104,15 @@ export class Controller {
     if (method === 'item/completed' && params.item?.type === 'agentMessage' && params.item.phase !== 'commentary') {
       const item = params.item; if (this.replied.has(item.id)) return; this.replied.add(item.id);
       if (this.replied.size > 1000) this.replied.delete(this.replied.values().next().value);
-      this.store.event('controller_reply', { threadId: this.threadId, text: item.text });
-      if (this.config.replyInGame && this.runtime.connection === 'connected') await this.runtime.say(item.text);
+      const characterId = this.voiceForTurn(params.turnId || this.activeTurn || this.store.data.controller.lastSpeechTurnId);
+      const text = characterSpeech(characterId, item.text);
+      this.store.event('controller_reply', { threadId: this.threadId, characterId, text, ...(text !== item.text ? { modelText: item.text } : {}) });
+      if (this.config.replyInGame && this.runtime.connection === 'connected') await this.runtime.say(text, { characterId });
     }
   }
   async onRequest({ id, method, params = {} }) {
     if (method === 'item/tool/call' && params.threadId === this.threadId) {
-      try { const result = await dispatch(this.runtime, params.tool, params.arguments); this.rpc.respond(id, { success: true, contentItems: [{ type: 'inputText', text: json(result) }] }); }
+      try { const speechCharacterId = this.voiceForTurn(params.turnId || this.activeTurn || this.store.data.controller.lastSpeechTurnId); const result = await dispatch(this.runtime, params.tool, params.arguments, { speechCharacterId }); this.rpc.respond(id, { success: true, contentItems: [{ type: 'inputText', text: json(result) }] }); }
       catch (error) { this.rpc.respond(id, { success: false, contentItems: [{ type: 'inputText', text: error.message }] }); }
     } else if (method === 'item/commandExecution/requestApproval' || method === 'item/fileChange/requestApproval') {
       this.rpc.respond(id, { decision: 'decline' }); this.store.event('controller_approval_required', { method });

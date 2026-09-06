@@ -12,7 +12,7 @@ class FakeRpc extends EventEmitter {
   async request(method, params) {
     this.requests.push({ method, params });
     if (method === 'thread/start' || method === 'thread/resume') return { thread: { id: 'shared-thread', turns: [] } };
-    if (method === 'turn/start' || method === 'turn/steer') { if (this.failTurn) throw new Error('Timed out after acceptance'); return { turn: { id: 'turn-1' }, turnId: 'turn-1' }; }
+    if (method === 'turn/start' || method === 'turn/steer') { if (this.failTurn) throw new Error('Timed out after acceptance'); if (method === 'turn/start') this.turn = (this.turn || 0) + 1; const id = `turn-${this.turn}`; return { turn: { id }, turnId: id }; }
     return {};
   }
   respond(id, result) { this.responses.push({ id, result }); }
@@ -63,4 +63,26 @@ test('changed persona is isolated from owner text and waits for the next turn', 
   assert.equal(calls.length, 2); assert.equal(calls[1].params.input[0].text, '밭을 봐 주세요');
   assert.equal(JSON.parse(calls[1].params.additionalContext.companion_character.value).selectedCharacter.id, 'gemchan');
   assert.equal(store.data.messages.length, 2);
+});
+
+test('late replies and tool chat keep their original character after switching helpers', async t => {
+  const { runtime, store, bot } = fixture(t); runtime.connection = 'disconnected';
+  const rpc = new FakeRpc(); const c = new Controller(runtime, rpc); t.after(() => c.close());
+  await dispatch(runtime, 'minecraft_select_helper', { characterId: 'doro', worldKey: 'world' });
+  store.message({ id: 'doro-owner', source: 'codex', owner: OWNER, text: '밭을 확인해 주세요' }); await c.pump();
+  const first = c.activeTurn;
+  await dispatch(runtime, 'minecraft_select_helper', { characterId: 'yanro', worldKey: 'world' });
+  await c.onNotification({ method: 'turn/completed', params: { threadId: c.threadId, turn: { id: first, status: 'completed' } } });
+  store.message({ id: 'yanro-owner', source: 'codex', owner: OWNER, text: '박사님도 확인해 주세요' }); await c.pump();
+  const second = c.activeTurn; assert.notEqual(first, second); runtime.connection = 'connected';
+  await c.onNotification({ method: 'item/completed', params: { threadId: c.threadId, turnId: first, item: { id: 'late-doro', type: 'agentMessage', text: '수확했습니다.' } } });
+  assert.equal(bot.calls.at(-1)[1], '[봇] 도로?');
+  assert.equal(store.data.events.findLast(e => e.type === 'controller_reply').modelText, '수확했습니다.');
+  await c.onRequest({ id: 100, method: 'item/tool/call', params: { threadId: c.threadId, turnId: first, tool: 'minecraft_chat', arguments: { text: '도로! doro?' } } });
+  assert.equal(bot.calls.at(-1)[1], '[봇] 도로! doro?');
+  await c.onNotification({ method: 'item/completed', params: { threadId: c.threadId, turnId: second, item: { id: 'yanro', type: 'agentMessage', text: '지금 상태를 확인하겠습니다.' } } });
+  assert.match(bot.calls.at(-1)[1], /LLM/);
+  assert.equal(store.data.messages[0].text, '밭을 확인해 주세요');
+  assert.equal(store.data.jobs.length, 0);
+  assert.equal(new (store.constructor)(store.dir).data.controller.speechTurns[first], 'doro');
 });

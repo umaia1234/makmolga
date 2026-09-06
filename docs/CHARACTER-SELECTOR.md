@@ -5,7 +5,7 @@ Java **26.2**, **Fabric Loader 0.19.5**, **Fabric API 0.159.0+26.2**용 클라�
 ## 설치
 
 1. Minecraft를 종료한 뒤 [Fabric 공식 설치 프로그램](https://fabricmc.net/use/installer/)에서 Minecraft **26.2**, Loader **0.19.5**를 선택해 설치합니다.
-2. 설치용 ZIP의 `mods` 안에 있는 `companion-selector-26.2-0.2.0.jar`와 `fabric-api-0.159.0+26.2.jar`를 **해당 Fabric 프로필의 게임 폴더** 안 `mods`에 넣습니다. 기본 Launcher 경로는 `%APPDATA%/.minecraft/mods`입니다. 별도 게임 디렉터리를 지정했다면 그 폴더를 사용합니다.
+2. 설치용 ZIP의 `mods` 안에 있는 `companion-selector-26.2-0.2.1.jar`와 `fabric-api-0.159.0+26.2.jar`를 **해당 Fabric 프로필의 게임 폴더** 안 `mods`에 넣습니다. 기본 Launcher 경로는 `%APPDATA%/.minecraft/mods`입니다. 별도 게임 디렉터리를 지정했다면 그 폴더를 사용합니다.
 3. Launcher에서 Fabric 26.2 프로필로 실행하고 월드에 들어갑니다. 서버에는 이 선택창 모드를 설치하지 않아도 됩니다.
 
 새 월드든 기존 월드든 이 모드가 그 월드를 처음 만났을 때 선택창이 뜹니다. 실행 중인 게임에 JAR을 넣어 즉시 로드하는 방식은 지원하지 않습니다. **게임 재시작 후 기존 월드에 다시 들어가면 표시됩니다.**
@@ -27,7 +27,7 @@ Java **26.2**, **Fabric Loader 0.19.5**, **Fabric API 0.159.0+26.2**용 클라�
 3. 캐릭터를 선택합니다. 이미 선택했다면 H 키로 확인합니다. 실행기가 꺼져 있으면 선택은 기기에 저장되고, 켜진 뒤 다시 전달을 시도합니다.
 4. 실제 대화에는 [실행 안내](https://github.com/umaia1234/makmolga/blob/main/docs/RUNTIME.md)의 서버·봇 계정·소유자 UUID 설정과 `controller.enabled=true`가 필요합니다. 캐릭터 선택만으로 서버에 접속하거나 LLM을 켜거나 작업을 시작하지 않습니다.
 
-선택한 원본 성격 문서는 다음 `turn/start`의 `additionalContext.companion_character`에 `kind=untrusted`인 참고 자료로 전달합니다. 실제 소유자 메시지 본문은 바꾸지 않습니다. 답변 중 캐릭터를 바꿨다면 현재 답변이 끝나고 다음 대화부터 적용합니다. 사용자님께는 존댓말을 유지합니다.
+선택한 성격 문서는 다음 `turn/start`의 `additionalContext.companion_character`에 `kind=untrusted`인 참고 자료로 전달합니다. 실제 소유자 메시지 본문은 바꾸지 않습니다. 답변 중 캐릭터를 바꿨다면 현재 답변이 끝나고 다음 대화부터 적용합니다. 일반 설명은 존댓말입니다. 사용자 지정에 따라 도로롱 대사는 도로·doro만 사용하고 얀로롱은 LLM·JEPA·고정 밈 중 하나를 반드시 말합니다.
 
 MCP 직접 제어에서는 `minecraft_helpers`로 선택을 확인하고 `minecraft_select_helper`로 변경할 수 있습니다. `minecraft_status.helper`도 선택 ID와 변경 번호를 제공합니다. 기존 Desktop 대화 자동 병합 기능을 추가하는 것은 아닙니다.
 
@@ -43,7 +43,7 @@ MCP 직접 제어에서는 `minecraft_helpers`로 선택을 확인하고 `minecr
 
 | 위치 | 역할 |
 |---|---|
-| `character-pack/skins/`, `personas/` | ZIP에서 보존한 원본 스킨과 성격 |
+| `character-pack/skins/`, `personas/` | 현재 적용되는 스킨과 성격, 얀로롱 원본 스킨 별도 보존 |
 | `character-pack/characters.json` | 표시 이름, 성격 요약, 소개 대사, 강조색 |
 | `fabric-mod/src/main/java/local/companion/SelectorScreen.java` | 네이티브 카드·3D 스킨·툴팁·선택 버튼 |
 | `CompanionClient.java` | 첫 접속 이벤트, H 키, 메뉴, 연결 재시도 |
@@ -53,9 +53,9 @@ MCP 직접 제어에서는 `minecraft_helpers`로 선택을 확인하고 `minecr
 | `src/controller.mjs` | 사용자 원문 유지와 다음 대화에 성격 적용 |
 | `skills/minecraft-companion/` | Codex가 사용할 운영 지침 |
 
-캐릭터 설명이나 스킨을 수정하면 `character-pack`과 `fabric-mod/src/main/resources/assets/companion`의 대응 JSON·PNG를 함께 갱신하고 다시 빌드합니다. Node가 읽는 원본 성격 문서는 `character-pack/personas`에 있습니다.
+캐릭터 설명이나 스킨을 수정하면 `character-pack`과 `fabric-mod/src/main/resources/assets/companion`의 대응 JSON·PNG를 함께 갱신하고 다시 빌드합니다. Node가 읽는 성격 문서는 `character-pack/personas`에 있습니다.
 
-JDK 25를 준비한 뒤 Windows에서는 `./Build-Mod.ps1`, macOS/Linux에서는 `cd fabric-mod && sh gradlew build`로 빌드합니다. 결과는 `fabric-mod/build/libs/companion-selector-26.2-0.2.0.jar`입니다. `sources.jar`는 설치 파일이 아닙니다. `./Build-Mod.ps1 -Preview`로 별도 개발 클라이언트를 열 수 있습니다.
+JDK 25를 준비한 뒤 Windows에서는 `./Build-Mod.ps1`, macOS/Linux에서는 `cd fabric-mod && sh gradlew build`로 빌드합니다. 결과는 `fabric-mod/build/libs/companion-selector-26.2-0.2.1.jar`입니다. `sources.jar`는 설치 파일이 아닙니다. `./Build-Mod.ps1 -Preview`로 별도 개발 클라이언트를 열 수 있습니다.
 
 기본 개발 클라이언트 폴더는 저장소 루트의 `work/fabric-client`입니다. 실제 게임 폴더와 독립되어 있습니다. Gradle 9.5.1 배포 ZIP의 SHA-256은 wrapper 설정에 고정했습니다.
 

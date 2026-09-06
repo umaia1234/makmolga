@@ -4,6 +4,7 @@ import pathfinderPackage from 'mineflayer-pathfinder';
 import { Jobs, delay } from './jobs.mjs';
 import { perform, itemView, blockView, vec } from './actions.mjs';
 import { ownerChat, chatLines } from './chat.mjs';
+import { characterSpeech } from './voice.mjs';
 import { ProxyProcess } from './proxy.mjs';
 const { pathfinder, Movements } = pathfinderPackage;
 const foods = ['cooked_beef', 'cooked_porkchop', 'cooked_chicken', 'cooked_mutton', 'cooked_rabbit', 'bread', 'baked_potato', 'cooked_salmon', 'cooked_cod', 'carrot', 'apple', 'dried_kelp', 'melon_slice', 'sweet_berries'];
@@ -118,9 +119,9 @@ export class Runtime {
     const found = ids.length ? b.findBlocks({ matching: ids, maxDistance: radius, count }).map(p => blockView(b.blockAt(p))) : [];
     return { ...this.snapshot(), entities, blocks: found, visiblePlayers: Object.values(b.players).map(p => ({ username: p.username, uuid: p.uuid, visible: !!p.entity })) };
   }
-  async say(text) {
-    this.requireBot(); const b = this.bot;
-    const send = async () => { for (const line of chatLines(text)) { if (this.bot !== b || this.connection !== 'connected') throw new Error('Chat connection ended'); b.chat(line); await delay(600); } return { sent: true }; };
+  async say(text, { characterId = this.store.data.helper?.characterId } = {}) {
+    this.requireBot(); const b = this.bot; const speech = characterSpeech(characterId, text);
+    const send = async () => { for (const line of chatLines(speech)) { if (this.bot !== b || this.connection !== 'connected') throw new Error('Chat connection ended'); b.chat(line); await delay(600); } return { sent: true, text: speech }; };
     const result = this.chatChain.then(send, send); this.chatChain = result.catch(() => {}); return result;
   }
   close() { clearInterval(this.guard); this.disconnect('Companion stopped'); this.proxy.stop(); }

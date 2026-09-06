@@ -10,7 +10,7 @@ import { Store } from '../src/store.mjs';
 import { serve } from '../src/api.mjs';
 import { fixture } from './helpers.mjs';
 
-test('all five supplied skins stay byte-identical in the Fabric resources', () => {
+test('all five active skins have matching Fabric resources, catalog hashes and dimensions', () => {
   assert.equal(characters.length, 5);
   for (const c of characters) {
     const source = fs.readFileSync(path.join(ROOT, 'character-pack', c.skin));

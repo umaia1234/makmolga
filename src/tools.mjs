@@ -45,7 +45,7 @@ export const definitions = [
 ];
 export const json = value => JSON.stringify(value, (_key, v) => typeof v === 'bigint' ? String(v) : v);
 export function toolSpec() { return definitions.map(d => ({ type: 'function', name: d.name, description: d.description, inputSchema: z.toJSONSchema(d.schema, { target: 'draft-7' }) })); }
-export async function dispatch(runtime, toolName, input = {}) {
+export async function dispatch(runtime, toolName, input = {}, { speechCharacterId = runtime.store.data.helper?.characterId } = {}) {
   const d = definitions.find(d => d.name === toolName); if (!d) throw new Error(`Unknown tool ${toolName}`);
   const a = d.schema.parse(input); const store = runtime.store;
   switch (toolName) {
@@ -71,6 +71,6 @@ export async function dispatch(runtime, toolName, input = {}) {
     case 'minecraft_inbox': return { messages: store.data.messages.filter(m => ['pending', 'uncertain'].includes(m.status)) };
     case 'minecraft_acknowledge': return store.updateMessage(a.id, { status: a.status });
     case 'minecraft_owner_message': return store.message({ id: a.id, text: a.text, owner: runtime.config.owner.uuid || 'local-owner', source: 'codex', status: a.forward ? 'pending' : 'delivered' });
-    case 'minecraft_chat': return runtime.say(a.text);
+    case 'minecraft_chat': return runtime.say(a.text, { characterId: speechCharacterId });
   }
 }

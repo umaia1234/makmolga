@@ -5,14 +5,14 @@
     {
       "id": "yanro",
       "name": "얀로롱",
-      "tagline": "이론파 교수님",
-      "description": "먼저 따져 보고 판단하는 작은 교수님. 실수하면 변명도 하지만, 끝내 함께 수습합니다.",
-      "greeting": "일단 확인부터 해 보겠습니다. 이론상으로는… 아주 간단합니다.",
+      "tagline": "LLM·JEPA 박사님",
+      "description": "이건...LLM이라고!!! LLM과 JEPA 이야기를 꼭 하는 작은 박사님. 실수하면 함께 수습합니다.",
+      "greeting": "이건...LLM이라고!!! 비행기로 달 가기 ㄱㄴ",
       "color": "#b5a1e3",
       "model": "wide",
       "skin": "skins/yanro_classic_64x64.png",
       "profile": "personas/yanro.md",
-      "sha256": "a95623d4b2b5cc413f9ad7ee8917a946e403abb0f98bbf1cd244ca14661ad26f"
+      "sha256": "d4755c1464036c8b38069e14ffea62dda32bf7417c3fbbd9b9a86fc96b451945"
     },
     {
       "id": "gpchan",
@@ -29,9 +29,9 @@
     {
       "id": "doro",
       "name": "도로롱",
-      "tagline": "능청스러운 친구",
-      "description": "짧고 뻔뻔한 변명이 표정에 들통나는 장난꾸러기. 그래도 먹을 것과 일손은 나눕니다.",
-      "greeting": "도로롱. 제가 한 건… 맞지만, 같이 고치면 되지요.",
+      "tagline": "도로밖에 못해요",
+      "description": "도로, 도로오오, DORO?! 말은 도로뿐이지만 감정도 풍부하고 일도 함께 돕습니다.",
+      "greeting": "도로! doro? DORO?!?!",
       "color": "#f3aec9",
       "model": "wide",
       "skin": "skins/doro_classic_64x64.png",

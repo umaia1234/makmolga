@@ -1,5 +1,7 @@
 # 캐릭터 선택창 검증 기록
 
+아래는 v0.2.0의 검증 이력입니다. 최신 v0.2.1의 눈·말투와 자동 검사 결과는 [캐릭터 수정 기록](https://github.com/umaia1234/makmolga/blob/main/docs/PERSONA-UPDATE.md)을 참고합니다.
+
 2026-09-07, Windows / Microsoft OpenJDK 25.0.1 / Java 26.2 / Fabric Loader 0.19.5 / Fabric API 0.159.0+26.2.
 
 ## 자동 검증
