@@ -1,0 +1,43 @@
+plugins {
+    id 'net.fabricmc.fabric-loom' version '1.17.20'
+}
+
+version = '0.2.0'
+group = 'local.companion'
+base { archivesName = 'companion-selector-26.2' }
+
+repositories { mavenCentral() }
+dependencies {
+    minecraft 'com.mojang:minecraft:26.2'
+    implementation 'net.fabricmc:fabric-loader:0.19.5'
+    implementation 'net.fabricmc.fabric-api:fabric-api:0.159.0+26.2'
+    testImplementation platform('org.junit:junit-bom:5.13.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+loom {
+    runs {
+        client {
+            client()
+            runDir '../work/fabric-client'
+            programArgs '--width', '1280', '--height', '800'
+            if (project.hasProperty('assetsDir')) { programArgs '--assetsDir', project.property('assetsDir'), '--assetIndex', '32' }
+            if (project.hasProperty('selectorPreview')) {
+                vmArg '-Dcompanion.selectorPreview=true'
+            }
+        }
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+    withSourcesJar()
+}
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.withType(Test).configureEach { useJUnitPlatform() }
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}

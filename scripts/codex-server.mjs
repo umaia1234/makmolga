@@ -1,0 +1,10 @@
+import { spawn } from 'node:child_process';
+import { loadConfig, ROOT } from '../src/config.mjs';
+const config = loadConfig();
+const url = new URL(config.controller.websocketUrl);
+if (url.protocol !== 'ws:' || !['127.0.0.1', 'localhost'].includes(url.hostname)) throw new Error('Use a loopback WebSocket endpoint.');
+const child = spawn(config.controller.command, ['app-server', '--listen', url.href.replace(/\/$/, '')], { cwd: ROOT, windowsHide: true, stdio: 'inherit' });
+console.error(`Codex server: ${url.origin}. Controller transport must be websocket. Connect a Codex CLI client with: codex --remote ${url.origin}`);
+child.on('error', e => { console.error(e.message); process.exitCode = 1; });
+process.on('SIGINT', () => child.kill()); process.on('SIGTERM', () => child.kill());
+child.on('exit', code => { process.exitCode = code || 0; });

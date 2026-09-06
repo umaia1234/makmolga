@@ -1,0 +1,89 @@
+{
+  "recordedAt": "2026-09-06T16:40:33.557509+00:00",
+  "version": "0.2.0",
+  "minecraft": "26.2",
+  "fabricLoader": "0.19.5",
+  "fabricApi": "0.159.0+26.2",
+  "nodeTests": {
+    "passed": 27,
+    "failed": 0,
+    "relatedRetestPassed": 9
+  },
+  "javaTests": [
+    {
+      "name": "local.companion.LocalBridgeTest",
+      "passed": 3
+    },
+    {
+      "name": "local.companion.WorldMemoryTest",
+      "passed": 3
+    }
+  ],
+  "nativeGui": {
+    "newWorldAutomaticPrompt": true,
+    "existingSaveWithFreshPreferencesAutomaticPrompt": true,
+    "hotkeyReopen": true,
+    "pauseMenuReopen": true,
+    "guiScales": [
+      2,
+      3
+    ],
+    "fiveOriginal3dSkins": true,
+    "koreanLabelsAndHoverTooltips": true
+  },
+  "nativeToRuntime": {
+    "verified": true,
+    "initialCharacter": "doro",
+    "changedCharacter": "gemchan",
+    "finalRevision": 2,
+    "ownerMessagesCreated": 0,
+    "gameplayJobsCreated": 0
+  },
+  "actualLlmTurnTested": false,
+  "actualBotAccountSkinChanged": false,
+  "existingUserWorldModified": false,
+  "testRuntimeStopped": true,
+  "artifacts": {
+    "mods/companion-selector-26.2-0.2.0.jar": "5ca772a699b2c4ad339a82945cb44caaaf992758c9ca15d948cb22fdfbf1c701",
+    "mods/fabric-api-0.159.0+26.2.jar": "3f3a5d96e6a8f554a72e71fb507d6a979ca16d9190c305ceb1300f1d01e733ee"
+  },
+  "gradleDistributionSha256": "bafc141b619ad6350fd975fc903156dd5c151998cc8b058e8c1044ab5f7b031f",
+  "sources": {
+    "src/actions.mjs": "fbf2cd07c7af00be434ad2411e55f3957539523cf7b794f6c7341a008f893b0a",
+    "src/api.mjs": "db96cca016262d4fe8d9eeb21f4330542b00f31172fe8ecf5874cec486539e17",
+    "src/characters.mjs": "26ab8b7411585e6c36b4146a0c80b229a58bf3d6e077211055f640aa93826e5c",
+    "src/chat.mjs": "99a6fa72aa76cbc758e03827c2e5b70c010041d014e89ed1c436520de029577c",
+    "src/cli.mjs": "c5f1e2d93bc5513848a83eb3a253f3752819c42e8fd1ce7ce15314346bcaee24",
+    "src/client.mjs": "5a02eb3637ef106a21e1384a923edd487aefdd5af605b8f20bec3382a4091491",
+    "src/config.mjs": "1dfb366cd66a369c82daa406d7a3178d29de9b38b8896df9dd3938a15d5f44b5",
+    "src/controller.mjs": "1f6451afd6b218d0ec334a2b4860c164a4dd4e483f1aeb490d9f86a2cc97e517",
+    "src/jobs.mjs": "3c7928e8f629e4797876159c70bd6d0b3b323b3acf411ed021b152e21a057abc",
+    "src/main.mjs": "9620cedf3ab751aceb125daee4a3b0f794b2fdb94c4d346c358edf03245e8d33",
+    "src/mcp.mjs": "c309173bfe8d59b161cba3d7291620626805a8cd2f8c759e517cc6c92929bc11",
+    "src/proxy.mjs": "65fef8b11fff1b3d6dc27d5b2e9b77b24cbfc656b1ad416fd10b3c3e6f9b85e5",
+    "src/rpc.mjs": "41c84a14c648fa3e2827127b563f18736f946e6193d873cb64e19477c503cf0a",
+    "src/runtime.mjs": "546540d5ef2f6dbce37e11606475158571d870e8bb352efafb69612062e189ae",
+    "src/store.mjs": "18ccd156fc12c537a90d69b6d1e036d9f17442a51aeeb76312dd7ab70617124f",
+    "src/tools.mjs": "494805977d4b82c55b88d7f1217cf3f12a52c2d14e5712392ae2ee847f7b84b9",
+    "fabric-mod/src/main/java/local/companion/BridgeSettingsScreen.java": "e80ce43eb009d50663815c39fa8e94c3f0e93118e0e5096fd42cbc37a7d34661",
+    "fabric-mod/src/main/java/local/companion/CharacterCatalog.java": "7957c791d492bedef9e187f70644de16e81093313f69217bc1b511d1aa53062c",
+    "fabric-mod/src/main/java/local/companion/CompanionClient.java": "bd8774dbdd0ea093c25c0c0fb66029cdd186c341da7fd061742f5621bd0c554e",
+    "fabric-mod/src/main/java/local/companion/LocalBridge.java": "70238f4e95caa1da8aa25e462f9c954052b681122d0df990b44dde20080700cf",
+    "fabric-mod/src/main/java/local/companion/SelectorScreen.java": "f73f645f2e0b699a5a2151751d6f70e5d9070bc15816969a9df53678f86ff609",
+    "fabric-mod/src/main/java/local/companion/WorldMemory.java": "4f809b2040b28435194ee5bb8619ec9b1fb9e9b24a7729e52d0c09008c718f3b",
+    "fabric-mod/src/main/resources/assets/companion/characters.json": "186dee9f474e8a96b5c5d3c4ec0e6d7ba9a52c20f3321bc0acef369433dd8603",
+    "fabric-mod/src/main/resources/assets/companion/lang/en_us.json": "72f5d537aaf790839a88d5e28337f69f9b9baffa7bf5a96fc146b93736b48ba5",
+    "fabric-mod/src/main/resources/assets/companion/lang/ko_kr.json": "b826976eea859c0c98740cdc3db6f72078471fcf5bb9d868b9a113773a236d00",
+    "fabric-mod/src/main/resources/assets/companion/textures/skins/doro.png": "5d4339362960aa42be73d0c84ae59a137b08da783bea0d9c932fd15f675203fb",
+    "fabric-mod/src/main/resources/assets/companion/textures/skins/gemchan.png": "b8a59b824b9824d223e0f0021dc5a851a0f736a102f2d80546a668bc85385053",
+    "fabric-mod/src/main/resources/assets/companion/textures/skins/gpchan.png": "f2fd54b57e082865dbb2c2b5384a2e7ba6e53608e1a8d6bd54478c940d40bdc6",
+    "fabric-mod/src/main/resources/assets/companion/textures/skins/spiki.png": "84df0503ec7652181435231a4782017fc18c02e1992dff023f51288b9f4568f2",
+    "fabric-mod/src/main/resources/assets/companion/textures/skins/yanro.png": "a95623d4b2b5cc413f9ad7ee8917a946e403abb0f98bbf1cd244ca14661ad26f",
+    "fabric-mod/src/main/resources/fabric.mod.json": "019d529baa32e3e26fd2743b9d7fd81e6ee9a9055b381188c18939d8415cfb01",
+    "character-pack/personas/doro.md": "23444363246263d34b4e8f117852c947f911ae9730cc65d20082d8c3d9f52aef",
+    "character-pack/personas/gemchan.md": "21789a1ceebc40cbdc7ad4de3c0f168c59bbddec0b3d1dabf94e4671045a0c84",
+    "character-pack/personas/gpchan.md": "179ab587955f8dd64f7eb55880352f797cc72c73b54c70a71e77eacf28f2dc53",
+    "character-pack/personas/spiki.md": "8d7111fb2770570ea45f919e3c31c96459be4e5971e1574747e6223ee150d917",
+    "character-pack/personas/yanro.md": "f58a30733a2f7659b4da480d168421dfd4acb75e3dcfe3fc60879552011d8b86"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "minecraft": {
+    "host": "127.0.0.1",
+    "port": 25565,
+    "targetVersion": "26.2",
+    "clientVersion": "26.1",
+    "username": "CompanionBot",
+    "auth": "microsoft",
+    "allowOfflineLocal": false,
+    "autoConnect": false,
+    "reconnect": true,
+    "reconnectAttempts": 5
+  },
+  "owner": {
+    "username": "",
+    "uuid": "",
+    "requireVerifiedChat": false,
+    "prefix": "!봇 "
+  },
+  "api": {
+    "port": 47831
+  },
+  "proxy": {
+    "enabled": true,
+    "port": 25568,
+    "java": "java",
+    "jar": "runtime/vendor/ViaProxy-3.4.12.jar",
+    "authMethod": "ACCOUNT",
+    "accountIndex": 0
+  },
+  "safety": {
+    "minHealth": 8,
+    "disconnectHealth": 4,
+    "minOxygen": 8,
+    "autoEat": true,
+    "eatBelow": 16,
+    "maxTravel": 64,
+    "home": null
+  },
+  "controller": {
+    "enabled": false,
+    "transport": "stdio",
+    "command": "codex",
+    "websocketUrl": "ws://127.0.0.1:4500",
+    "threadId": null,
+    "model": null,
+    "replyInGame": true,
+    "maxTurnsPerHour": 30,
+    "idleTimeoutSeconds": 300
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "title": "LLM 도우미 선택하기",
+  "characters": [
+    {
+      "id": "yanro",
+      "name": "얀로롱",
+      "tagline": "이론파 교수님",
+      "description": "먼저 따져 보고 판단하는 작은 교수님. 실수하면 변명도 하지만, 끝내 함께 수습합니다.",
+      "greeting": "일단 확인부터 해 보겠습니다. 이론상으로는… 아주 간단합니다.",
+      "color": "#b5a1e3",
+      "model": "wide",
+      "skin": "skins/yanro_classic_64x64.png",
+      "profile": "personas/yanro.md",
+      "sha256": "a95623d4b2b5cc413f9ad7ee8917a946e403abb0f98bbf1cd244ca14661ad26f"
+    },
+    {
+      "id": "gpchan",
+      "name": "지피짱",
+      "tagline": "다정한 실행파",
+      "description": "차분하게 문제를 짚고 다정하게 등을 밀어 줍니다. 공감한 다음에는 바로 일을 시작합니다.",
+      "greeting": "괜찮습니다. 지금 할 수 있는 일부터 하나씩 해 보겠습니다.",
+      "color": "#82d4bc",
+      "model": "wide",
+      "skin": "skins/gpchan_classic_64x64.png",
+      "profile": "personas/gpchan.md",
+      "sha256": "f2fd54b57e082865dbb2c2b5384a2e7ba6e53608e1a8d6bd54478c940d40bdc6"
+    },
+    {
+      "id": "doro",
+      "name": "도로롱",
+      "tagline": "능청스러운 친구",
+      "description": "짧고 뻔뻔한 변명이 표정에 들통나는 장난꾸러기. 그래도 먹을 것과 일손은 나눕니다.",
+      "greeting": "도로롱. 제가 한 건… 맞지만, 같이 고치면 되지요.",
+      "color": "#f3aec9",
+      "model": "wide",
+      "skin": "skins/doro_classic_64x64.png",
+      "profile": "personas/doro.md",
+      "sha256": "5d4339362960aa42be73d0c84ae59a137b08da783bea0d9c932fd15f675203fb"
+    },
+    {
+      "id": "gemchan",
+      "name": "젬짱",
+      "tagline": "다시 일어나는 천재",
+      "description": "자신감 넘치게 나섰다가 작은 오류에 풀이 죽습니다. 금세 기운을 차려 다시 도전합니다.",
+      "greeting": "완벽한 계획입니다! …잠깐만요. 고치면 더 완벽해집니다.",
+      "color": "#f0d57d",
+      "model": "wide",
+      "skin": "skins/gemchan_classic_64x64.png",
+      "profile": "personas/gemchan.md",
+      "sha256": "b8a59b824b9824d223e0f0021dc5a851a0f736a102f2d80546a668bc85385053"
+    },
+    {
+      "id": "spiki",
+      "name": "스피키",
+      "tagline": "호박을 아끼는 장난꾼",
+      "description": "그럴듯한 흉내 뒤로 솔직한 속마음이 튀어나옵니다. 호박 친구와 동료를 은근히 챙깁니다.",
+      "greeting": "흠흠, 전문가답게 해 보겠습니다. 호박 친구도 보고 있거든요.",
+      "color": "#f5a357",
+      "model": "wide",
+      "skin": "skins/spiki_classic_64x64.png",
+      "profile": "personas/spiki.md",
+      "sha256": "84df0503ec7652181435231a4782017fc18c02e1992dff023f51288b9f4568f2"
+    }
+  ]
+}

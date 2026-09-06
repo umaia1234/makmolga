@@ -1,0 +1,151 @@
+{
+  "release": "2026-09-07",
+  "characters": {
+    "yanro": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "model": "Classic / Steve",
+      "opaque_base_pixels": 1632,
+      "unused_and_overlay_transparent": true
+    },
+    "gpchan": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "model": "Classic / Steve",
+      "opaque_base_pixels": 1632,
+      "unused_and_overlay_transparent": true
+    },
+    "doro": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "model": "Classic / Steve",
+      "opaque_base_pixels": 1632,
+      "unused_and_overlay_transparent": true
+    },
+    "gemchan": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "model": "Classic / Steve",
+      "opaque_base_pixels": 1632,
+      "unused_and_overlay_transparent": true
+    },
+    "spiki": {
+      "size": [
+        64,
+        64
+      ],
+      "mode": "RGBA",
+      "model": "Classic / Steve",
+      "opaque_base_pixels": 1632,
+      "unused_and_overlay_transparent": true
+    }
+  },
+  "gemchan_head_preserved": true,
+  "other_four_skins_unchanged": true,
+  "front_back_previews_visually_inspected": true,
+  "in_game_tested": false,
+  "persona_review": "Three research agents; qualitative roleplay draft and voice review, not a model benchmark or laughter guarantee.",
+  "markdown_range_and_relative_link_checks": "passed",
+  "files": {
+    "README.md": {
+      "sha256": "a890957e0bab9a0f5be8cc6ae77cad2b9a9379af221199fcffa396b75899dca2",
+      "bytes": 3872
+    },
+    "ensemble_prompt.md": {
+      "sha256": "1ba725b9bd7c1a424b59210be1c40964fdfe089088c6dd43623a557aaeff00bc",
+      "bytes": 53278
+    },
+    "ensemble_rules.md": {
+      "sha256": "69c2d8b91bc97683b93d0b1150763f46dcf0c240e691d5b20ceaa104d0bd4090",
+      "bytes": 3849
+    },
+    "examples/audition.md": {
+      "sha256": "77e08c50428926e7674f605c4473978d117f9057355dc7b62d55d17a1f298296",
+      "bytes": 3003
+    },
+    "personas/doro.md": {
+      "sha256": "23444363246263d34b4e8f117852c947f911ae9730cc65d20082d8c3d9f52aef",
+      "bytes": 9403
+    },
+    "personas/gemchan.md": {
+      "sha256": "21789a1ceebc40cbdc7ad4de3c0f168c59bbddec0b3d1dabf94e4671045a0c84",
+      "bytes": 10161
+    },
+    "personas/gpchan.md": {
+      "sha256": "179ab587955f8dd64f7eb55880352f797cc72c73b54c70a71e77eacf28f2dc53",
+      "bytes": 9506
+    },
+    "personas/spiki.md": {
+      "sha256": "8d7111fb2770570ea45f919e3c31c96459be4e5971e1574747e6223ee150d917",
+      "bytes": 11407
+    },
+    "personas/yanro.md": {
+      "sha256": "f58a30733a2f7659b4da480d168421dfd4acb75e3dcfe3fc60879552011d8b86",
+      "bytes": 8923
+    },
+    "personas.json": {
+      "sha256": "2a4c112752882c61a55022c7abd508318faebf8b1e4307c683050cdecd9c8249",
+      "bytes": 104587
+    },
+    "previews/back.png": {
+      "sha256": "5dfcd884a5e93f0019a3a4ea3b8ed503cbf9a07b943af92faea6b68dcee5ebdf",
+      "bytes": 2640369
+    },
+    "previews/front.png": {
+      "sha256": "50b35bf5873bf1af363e14990072186b995fb1d1f6f4af21d6d2a653fcc834be",
+      "bytes": 2680236
+    },
+    "production/gemchan_outfit_prompt.txt": {
+      "sha256": "a85c630737407f06f49d7621188b16b38a92fd1b213d3821c9a25eddfea9c0f4",
+      "bytes": 2523
+    },
+    "research/doro_spiki.md": {
+      "sha256": "c23ecd3686d172e1f647e3b9347a61d0d653b3f2f90656ccfc82fa10ae86d2c1",
+      "bytes": 10889
+    },
+    "research/gemchan.md": {
+      "sha256": "b3748b05b479a47a7350b351647e666e6828ce6819e7d9d7eaca2ce1b2d449d5",
+      "bytes": 6844
+    },
+    "research/voice_review.md": {
+      "sha256": "18fee11918780b4432298da7eab693be28ac42ed28a0fd0ebfe7d86f281ed7f7",
+      "bytes": 6628
+    },
+    "research/yanro_gpchan.md": {
+      "sha256": "06a51caea7946a276528f8b543e2dd3d9973be92095066fdaba55515c7a3d9f0",
+      "bytes": 8452
+    },
+    "skins/doro_classic_64x64.png": {
+      "sha256": "5d4339362960aa42be73d0c84ae59a137b08da783bea0d9c932fd15f675203fb",
+      "bytes": 2960
+    },
+    "skins/gemchan_classic_64x64.png": {
+      "sha256": "b8a59b824b9824d223e0f0021dc5a851a0f736a102f2d80546a668bc85385053",
+      "bytes": 3617
+    },
+    "skins/gpchan_classic_64x64.png": {
+      "sha256": "f2fd54b57e082865dbb2c2b5384a2e7ba6e53608e1a8d6bd54478c940d40bdc6",
+      "bytes": 3865
+    },
+    "skins/spiki_classic_64x64.png": {
+      "sha256": "84df0503ec7652181435231a4782017fc18c02e1992dff023f51288b9f4568f2",
+      "bytes": 3086
+    },
+    "skins/yanro_classic_64x64.png": {
+      "sha256": "a95623d4b2b5cc413f9ad7ee8917a946e403abb0f98bbf1cd244ca14661ad26f",
+      "bytes": 3082
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "checkedAt": "2026-09-06T15:48:02.071Z",
+  "node": "v24.14.0",
+  "target": "26.2",
+  "client": "26.1",
+  "mineflayer": "4.38.0",
+  "officialMineflayerLatest": "26.1",
+  "clientDataAvailable": true,
+  "targetDataAvailable": false,
+  "proxyRequired": true,
+  "proxyDownloadedAndVerified": true,
+  "javaAvailable": true,
+  "javaVersion": "openjdk version \"25.0.1\" 2025-10-21 LTS\r",
+  "ownerConfigured": false,
+  "autoConnect": false,
+  "controllerEnabled": false,
+  "liveServerTested": false,
+  "note": "This diagnostic checks installed software. It does not assert gameplay compatibility or log in to a server.",
+  "mojangLatest": {
+    "release": "26.2",
+    "snapshot": "26.3-pre-2"
+  },
+  "targetIsLatestRelease": true
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "companion",
+  "version": "${version}",
+  "name": "LLM 도우미 선택하기",
+  "description": "월드별 캐릭터 선택, 다섯 스킨의 3D 미리보기, 로컬 Mineflayer LLM 컨트롤러 연결",
+  "environment": "client",
+  "entrypoints": { "client": ["local.companion.CompanionClient"] },
+  "depends": { "fabricloader": ">=0.19.5", "minecraft": "26.2", "java": ">=25", "fabric-api": "*" },
+  "license": "LicenseRef-Private-Character-Pack"
+}

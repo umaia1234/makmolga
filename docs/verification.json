@@ -1,0 +1,64 @@
+{
+  "recordedAt": "2026-09-06T16:01:59.254Z",
+  "tests": {
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 17944.5321
+  },
+  "syntax": {
+    "modules": 27,
+    "passed": true
+  },
+  "skillValidation": true,
+  "npmAudit": {
+    "total": 0
+  },
+  "actualCodexInitialize": true,
+  "actualModelTurnTested": false,
+  "actualVanilla26_2ServerTested": false,
+  "wireTranslationProtocols": [
+    775,
+    776,
+    775
+  ],
+  "windowsBackgroundStartStatusShutdown": true,
+  "sourceHashes": {
+    "Start-Companion.ps1": "a1c4ed5790d380285363949c7e1c3f8f505d4ab3be26537771ad589b2a2f2c8a",
+    "Stop-Companion.ps1": "ee9dc7f53d2e421ce6906b725c91ca46d14e573dfbcb7a0c5b80fa318c05a1c3",
+    "config.example.json": "4721ab06756d4818ff443adc4486130c21af194485f4ae1cd66e3ec6469aa39d",
+    "package-lock.json": "30ad12a2033ab469b3a95c2818fe7e8c28a510caeea2657959f0f9c12af7daab",
+    "package.json": "79bb5bb5f7f02d512673da324a3bf47e1a0287c59c2903091c94efd3dba8f359",
+    "scripts/check.mjs": "36855d312d62f7f82c3317080aecce6052d0f4ac859e5aa1516f70548d4649d6",
+    "scripts/codex-server.mjs": "9d850649e8d80280013c92d073843c09ec711d803f782edca1f31bbcf41ec801",
+    "scripts/doctor.mjs": "0143e786b5cc25d5ee917ddfba213c334819e9516d2554f6542605bc606b0b8a",
+    "scripts/setup.mjs": "5bfc7f2dd36da6e97e4c0bd9b5752d99ed2bb070869135e15ca4bc9ee0233d6a",
+    "skills/minecraft-companion/SKILL.md": "33231fc08603e9bb5cef8c9785b156b64149674cff7d43a2c2740a438b658259",
+    "skills/minecraft-companion/references/architecture.md": "1b1f648ef903440fc052180c7707b9defc893320141ea748a786fec752cfb7c4",
+    "skills/minecraft-companion/references/controller-prompt.md": "97f3bc8e4f246b6119e0dba17f9719ab8c54240da22f66d74f35c045d2b5a6ac",
+    "skills/minecraft-companion/references/controller.md": "40535efd435d5aa8cc93acce8fc0899b938e0f2088edcc6340fdac3e2db084b3",
+    "src/actions.mjs": "fbf2cd07c7af00be434ad2411e55f3957539523cf7b794f6c7341a008f893b0a",
+    "src/api.mjs": "db96cca016262d4fe8d9eeb21f4330542b00f31172fe8ecf5874cec486539e17",
+    "src/chat.mjs": "99a6fa72aa76cbc758e03827c2e5b70c010041d014e89ed1c436520de029577c",
+    "src/cli.mjs": "c5f1e2d93bc5513848a83eb3a253f3752819c42e8fd1ce7ce15314346bcaee24",
+    "src/client.mjs": "5a02eb3637ef106a21e1384a923edd487aefdd5af605b8f20bec3382a4091491",
+    "src/config.mjs": "1dfb366cd66a369c82daa406d7a3178d29de9b38b8896df9dd3938a15d5f44b5",
+    "src/controller.mjs": "0ba5bc99c66b9a2f0d948b845550c5c6166156adc6ebe0e06de2ccae590bf7f5",
+    "src/jobs.mjs": "3c7928e8f629e4797876159c70bd6d0b3b323b3acf411ed021b152e21a057abc",
+    "src/main.mjs": "9620cedf3ab751aceb125daee4a3b0f794b2fdb94c4d346c358edf03245e8d33",
+    "src/mcp.mjs": "c309173bfe8d59b161cba3d7291620626805a8cd2f8c759e517cc6c92929bc11",
+    "src/proxy.mjs": "65fef8b11fff1b3d6dc27d5b2e9b77b24cbfc656b1ad416fd10b3c3e6f9b85e5",
+    "src/rpc.mjs": "41c84a14c648fa3e2827127b563f18736f946e6193d873cb64e19477c503cf0a",
+    "src/runtime.mjs": "b4bbf3709a955df8e551825d343cc7eb356ba2e56b8a4edc740cc6e4fa3ef49f",
+    "src/store.mjs": "18ccd156fc12c537a90d69b6d1e036d9f17442a51aeeb76312dd7ab70617124f",
+    "src/tools.mjs": "f2e0566f8b2adc3b0db8bf3d450c9bc8bd62a49d9ba2ada7db7d4549079f061f",
+    "test/controller.test.mjs": "ffe157625ac35211e4b3bc85053b0cd276b75e2613cbdc3c7c1b9ef0c854026f",
+    "test/core.test.mjs": "b4d6f5861f1cfd189e675585530d7fd5a23ed04de7eabf43c7b58ba6ae03b1f9",
+    "test/daemon.test.mjs": "295a51ca3de2c33fbfefd68192744e2dcfde7fd80d368b7cea2f2927fc15a0ba",
+    "test/helpers.mjs": "b2cfc393b1f55a80b0b03a06f10dcf53288930ed32ec75eef4e51ac8b6671d33",
+    "test/integration.test.mjs": "42aeebb6d12ac7e0ab1f7df4b96af2ff6af4ff860babed853805c456fdce619b",
+    "test/protocol-fixture.mjs": "3d90f1a5ad507bf2cceb522e4672239fd0b4097444212bbb6d1668e23cadd277",
+    "test/protocol.test.mjs": "aa88a6e3ed753434492932a5fe3ddc73693b2991b44eed09a8eeaf27dd4b0993",
+    "test/proxy.test.mjs": "421c3ce86983a672fecf0387c36f3f00d853d533ca158ef4f17cf48f96dc0a55"
+  }
+}

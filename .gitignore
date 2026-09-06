@@ -1,0 +1,27 @@
+# Per-machine configuration and authentication
+config.local.json
+.codex/
+docs/mcp-config.toml
+.env
+.env.*
+!.env.example
+**/api-token
+
+# Runtime state, accounts, dependencies and build output
+node_modules/
+runtime/
+work/
+.gradle/
+**/build/
+fabric-mod/run/
+dist/
+*.log
+*.tmp
+*.pid
+*.class
+
+# Editor/OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

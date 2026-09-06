@@ -1,0 +1,42 @@
+{
+  "name": "makmolga",
+  "version": "0.2.0",
+  "private": true,
+  "overrides": {
+    "@azure/msal-node": {
+      "uuid": "11.1.1"
+    },
+    "yggdrasil": {
+      "uuid": "11.1.1"
+    }
+  },
+  "type": "module",
+  "description": "MAKMOLGA: Minecraft LLM companions with a Fabric character selector, Mineflayer runtime, and MCP control",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "start": "node src/main.mjs",
+    "mcp": "node src/mcp.mjs",
+    "ctl": "node src/cli.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "test": "node --test --test-concurrency=1 test/*.test.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "minecraft-data": "3.116.0",
+    "minecraft-protocol": "1.68.0",
+    "mineflayer": "4.38.0",
+    "mineflayer-pathfinder": "2.4.5",
+    "prismarine-item": "1.18.0",
+    "vec3": "0.1.10",
+    "ws": "8.21.3",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.0.0",
+    "prismarine-chunk": "1.41.0"
+  }
+}
