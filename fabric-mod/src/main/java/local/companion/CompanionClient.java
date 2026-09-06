@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class CompanionClient implements ClientModInitializer {
+    private static CompanionClient instance;
+    public final AppearanceBinding appearance = new AppearanceBinding();
     public static final Logger LOGGER = LoggerFactory.getLogger("companion");
     public List<CharacterCatalog.Character> characters;
     public WorldMemory memory;
@@ -33,15 +35,18 @@ public final class CompanionClient implements ClientModInitializer {
     private long retryAt;
     private KeyMapping selectorKey;
     @Override public void onInitializeClient() {
+        instance = this;
         characters = CharacterCatalog.load();
         try { memory = new WorldMemory(FabricLoader.getInstance().getConfigDir().resolve("companion-selector.json")); }
         catch (Exception e) { throw new IllegalStateException("Cannot open companion preferences", e); }
         var category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("companion", "helpers"));
         selectorKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.companion.select", InputConstants.Type.KEYSYM, InputConstants.KEY_H, category));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            appearance.clear();
             joined = true; prompted = false; worldKey = null; joinTicks = 0; retryAt = 0;
         });
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            appearance.clear();
             joined = false; worldKey = null; prompted = false; retryAt = 0;
         });
         ClientTickEvents.END_CLIENT_TICK.register(this::tick);
@@ -103,12 +108,14 @@ public final class CompanionClient implements ClientModInitializer {
             syncing = false;
             if (requestedWorld.equals(worldKey) && id.equals(memory.selected(worldKey))) {
                 bridgeNote = result.note();
+                appearance.update(worldKey, id, result.ok() ? result.botUuid() : null, System.currentTimeMillis());
                 retryAt = System.currentTimeMillis() + (result.ok() ? 30000 : 10000);
             } else retryAt = 0;
         }));
     }
     public void select(String id) throws java.io.IOException {
         memory.remember(worldKey, id); prompted = true; retryAt = 0;
+        appearance.clear();
         bridgeNote = "선택을 저장했습니다. H 키로 다시 고를 수 있습니다.";
         sync();
     }
@@ -117,4 +124,11 @@ public final class CompanionClient implements ClientModInitializer {
         prompted = true;
     }
     public void open(Screen parent) { Minecraft.getInstance().gui.setScreen(new SelectorScreen(this, parent)); }
+    public static CharacterCatalog.Character appearanceFor(java.util.UUID uuid) {
+        var current = instance;
+        if (current == null || current.worldKey == null) return null;
+        String id = current.appearance.characterFor(current.worldKey, uuid, System.currentTimeMillis());
+        if (id == null) return null;
+        return current.characters.stream().filter(c -> c.id().equals(id)).findFirst().orElse(null);
+    }
 }

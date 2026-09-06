@@ -18,6 +18,8 @@ export function helperStatus(runtime) {
     selected: selected ? { ...selected, character: character(selected.characterId) } : null,
     controllerEnabled: runtime.config.controller.enabled,
     connection: runtime.connection,
+    bot: runtime.connection === 'connected' && runtime.bot?.player?.uuid
+      ? { username: runtime.bot.username, uuid: runtime.bot.player.uuid } : null,
     applies: 'next_turn'
   };
 }

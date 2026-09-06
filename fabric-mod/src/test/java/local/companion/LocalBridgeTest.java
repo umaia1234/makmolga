@@ -24,7 +24,7 @@ class LocalBridgeTest {
         server.createContext("/call", exchange -> {
             authorization.set(exchange.getRequestHeaders().getFirst("Authorization"));
             request.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-            byte[] body = "{\"result\":{\"controllerEnabled\":false}}".getBytes(StandardCharsets.UTF_8);
+            byte[] body = "{\"result\":{\"controllerEnabled\":false,\"bot\":{\"uuid\":\"f7f02df9-b8bd-3a3c-9575-c5267bb66ce3\"}}}".getBytes(StandardCharsets.UTF_8);
             exchange.sendResponseHeaders(200, body.length); exchange.getResponseBody().write(body); exchange.close();
         });
         server.start();
@@ -36,6 +36,7 @@ class LocalBridgeTest {
             bridge.sync(directory.toString(), WorldMemory.key("world"), "yanro", null, completion::complete);
             var result = completion.get(5, TimeUnit.SECONDS);
             assertTrue(result.ok()); assertTrue(result.note().contains("LLM을 켜면"));
+            assertEquals("f7f02df9-b8bd-3a3c-9575-c5267bb66ce3", result.botUuid());
             assertEquals("Bearer " + "a".repeat(64), authorization.get());
             var payload = JsonParser.parseString(request.get()).getAsJsonObject();
             assertEquals("minecraft_select_helper", payload.get("name").getAsString());

@@ -2,7 +2,7 @@ plugins {
     id 'net.fabricmc.fabric-loom' version '1.17.20'
 }
 
-version = '0.2.1'
+version = '0.2.2'
 group = 'local.companion'
 base { archivesName = 'companion-selector-26.2' }
 

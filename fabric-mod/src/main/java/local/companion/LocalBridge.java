@@ -12,7 +12,9 @@ import java.util.function.Consumer;
 
 /** Authenticated loopback requests off the game's render/tick thread. */
 public final class LocalBridge {
-    public record Result(boolean ok, String note) {}
+    public record Result(boolean ok, String note, String botUuid) {
+        public Result(boolean ok, String note) { this(ok, note, null); }
+    }
     private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "companion-local-bridge"); t.setDaemon(true); return t;
     });
@@ -63,7 +65,12 @@ public final class LocalBridge {
                 else {
                     var payload = JsonParser.parseString(text).getAsJsonObject().getAsJsonObject("result");
                     boolean enabled = payload.get("controllerEnabled").getAsBoolean();
-                    result = new Result(true, enabled ? "연결되었습니다. 선택한 성격이 다음 대화부터 반영됩니다." : "선택을 전달했습니다. LLM을 켜면 이 성격으로 대화합니다.");
+                    String botUuid = null;
+                    if (payload.has("bot") && payload.get("bot").isJsonObject()) {
+                        String value = payload.getAsJsonObject("bot").get("uuid").getAsString();
+                        botUuid = java.util.UUID.fromString(value).toString();
+                    }
+                    result = new Result(true, enabled ? "연결되었습니다. 봇 외형과 다음 대화에 선택한 캐릭터를 적용합니다." : "선택을 전달했습니다. LLM을 켜면 이 성격으로 대화합니다.", botUuid);
                 }
             } catch (Exception e) {
                 if (e instanceof InterruptedException) Thread.currentThread().interrupt();

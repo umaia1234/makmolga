@@ -52,3 +52,13 @@ test('real HTTP API protects and accepts native character selection', async t =>
   const response = await fetch(url, { method: 'POST', body, headers: { Authorization: `Bearer ${store.token}`, 'Content-Type': 'application/json' } });
   assert.equal(response.status, 200); assert.equal((await response.json()).result.selected.characterId, 'spiki');
 });
+
+test('appearance identity comes from the connected bot profile and disappears on disconnect', async t => {
+  const { runtime, bot } = fixture(t);
+  bot.player = { uuid: 'f7f02df9-b8bd-3a3c-9575-c5267bb66ce3' };
+  const args = { characterId: 'gpchan', worldKey: 'local', serverAddress: '127.0.0.1:25565' };
+  const result = await dispatch(runtime, 'minecraft_select_helper', args);
+  assert.deepEqual(result.bot, { username: 'CompanionBot', uuid: bot.player.uuid });
+  runtime.connection = 'disconnected';
+  assert.equal((await dispatch(runtime, 'minecraft_select_helper', args)).bot, null);
+});
