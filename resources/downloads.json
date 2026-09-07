@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "checkedAt": "2026-09-07T09:42:49.970Z",
+  "minecraft": "26.2",
+  "loader": "0.19.5",
+  "codex": "0.153.4",
+  "node": {
+    "version": "v24.20.0",
+    "url": "https://nodejs.org/dist/v24.20.0/node-v24.20.0-win-x64.zip",
+    "sha256": "6cac9ffbca8f6a47091e4b5c772e0606049c3871cb67d900c0cedde630e545ba",
+    "directory": "node-v24.20.0-win-x64"
+  },
+  "java": {
+    "version": "25.0.4+101.0.LTS",
+    "url": "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jre_x64_windows_hotspot_25.0.4.1_1.zip",
+    "sha256": "4c95451cea98556def2c54f7782933f52a26d4a36bd85e1d59f0364464828b07"
+  },
+  "fabricInstaller": {
+    "version": "1.1.2",
+    "url": "https://maven.fabricmc.net/net/fabricmc/fabric-installer/1.1.2/fabric-installer-1.1.2.jar",
+    "sha256": "61e035bf7bf70153e127440ce34de47c9036f0a2d0c65d1529454bd35ceefe4f"
+  },
+  "fabricApi": {
+    "version": "0.159.0+26.2",
+    "url": "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/0.159.0+26.2/fabric-api-0.159.0+26.2.jar",
+    "sha256": "3f3a5d96e6a8f554a72e71fb507d6a979ca16d9190c305ceb1300f1d01e733ee"
+  }
+}

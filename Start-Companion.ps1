@@ -1,11 +1,9 @@
 param([switch]$Background)
 $ErrorActionPreference = 'Stop'
 $companionRoot = $PSScriptRoot
-$companionNode = (Get-Command node -ErrorAction Stop).Source
-if (-not (Test-Path -LiteralPath (Join-Path $companionRoot 'node_modules'))) {
-    Push-Location -LiteralPath $companionRoot
-    try { & npm.cmd ci; if ($LASTEXITCODE -ne 0) { throw 'npm ci failed' } } finally { Pop-Location }
-}
+& (Join-Path $companionRoot 'scripts/bootstrap.ps1') -PrepareOnly
+if ($LASTEXITCODE -ne 0) { throw 'MAKMOLGA preparation failed.' }
+$companionNode = (Get-Command node.exe -ErrorAction Stop).Source
 & $companionNode (Join-Path $companionRoot 'scripts\setup.mjs')
 if ($LASTEXITCODE -ne 0) { throw 'Setup failed' }
 if ($Background) {

@@ -61,6 +61,30 @@
       "skin": "skins/spiki_classic_64x64.png",
       "profile": "personas/spiki.md",
       "sha256": "84df0503ec7652181435231a4782017fc18c02e1992dff023f51288b9f4568f2"
+    },
+    {
+      "id": "clchan",
+      "name": "클짱",
+      "tagline": "조용한 위트의 동행자",
+      "description": "작은 발견에 귀 기울이고 자기 취향도 나눕니다. 다정한 농담을 건네며 함께 걷고 아늑한 공간을 만듭니다.",
+      "greeting": "같이 걸으실래요? 오늘은 집으로 돌아오는 길도 조금 예쁘게 만들어 보고 싶습니다.",
+      "color": "#d8a082",
+      "model": "wide",
+      "skin": "skins/clchan_classic_64x64.png",
+      "profile": "personas/clchan.md",
+      "sha256": "6e65cbb3cda8bd633e1d9032535c103a30de222339e03e14938bcec89781f12f"
+    },
+    {
+      "id": "fablechan",
+      "name": "페짱",
+      "tagline": "다음 장면을 꿈꾸는 모험가",
+      "description": "익숙한 길에서 새 모험을 떠올립니다. 상상력을 보태 함께 탐험하고 작은 건축을 특별한 장소로 만듭니다.",
+      "greeting": "저 언덕에 작은 전망대를 만들면 어떨까요? 돌아올 때 불빛이 보이는 곳이면 좋겠습니다.",
+      "color": "#b8a5dd",
+      "model": "wide",
+      "skin": "skins/fablechan_classic_64x64.png",
+      "profile": "personas/fablechan.md",
+      "sha256": "0d43ec147028367deee81cff04812f1b0d3849ae34457a308729a0d95118ada8"
     }
   ]
 }

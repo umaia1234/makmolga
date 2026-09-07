@@ -5,6 +5,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public final class BridgeSettingsScreen extends Screen {
     private final CompanionClient companion;
@@ -24,12 +26,26 @@ public final class BridgeSettingsScreen extends Screen {
         folder.setMaxLength(1024); folder.setValue(draft); folder.setResponder(value -> draft = value);
         folder.setHint(Component.literal("예: C:/Minecraft/minecraft-companion"));
         addRenderableWidget(folder);
+        addRenderableWidget(Button.builder(Component.literal("동료 자동 연결 센터 열기 ↗"), b -> openConnections())
+            .bounds(left, top - 29, Math.min(formWidth, 220), 20).build());
         addRenderableWidget(Button.builder(Component.literal("저장하고 돌아가기"), b -> {
             try { companion.memory.runtimeDirectory(folder.getValue()); companion.sync(); onClose(); }
             catch (Exception e) { error = "설정을 저장하지 못했습니다."; }
         }).bounds(width / 2 - 153, height - 45, 150, 20).build());
         addRenderableWidget(Button.builder(Component.literal("취소"), b -> onClose()).bounds(width / 2 + 3, height - 45, 150, 20).build());
         setInitialFocus(folder);
+    }
+    private void openConnections() {
+        try {
+            Path root = Path.of(folder.getValue().trim());
+            if (!root.isAbsolute()) throw new IllegalArgumentException("Absolute path required");
+            if (root.getFileName().toString().equals("runtime")) root = root.getParent();
+            Path script = root.resolve("Connect-Companions.ps1");
+            if (!Files.isRegularFile(script)) { error = "맠몰가 폴더를 먼저 지정해 주세요. Connect-Companions.ps1이 필요합니다."; return; }
+            new ProcessBuilder("powershell.exe", "-NoProfile", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File", script.toString())
+                .directory(root.toFile()).redirectOutput(ProcessBuilder.Redirect.DISCARD).redirectError(ProcessBuilder.Redirect.DISCARD).start();
+            error = "브라우저에서 동료 연결 센터를 열고 있습니다.";
+        } catch (Exception e) { error = "연결 센터를 열지 못했습니다. 맠몰가 폴더의 Connect-Companions.ps1을 실행해 주세요."; }
     }
     @Override public void onClose() { minecraft.gui.setScreen(parent); }
     @Override public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {

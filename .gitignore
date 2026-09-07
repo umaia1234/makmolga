@@ -1,6 +1,9 @@
 # Per-machine configuration and authentication
 config.local.json
 project.local.json
+.mcp.json
+.agents/mcp_config.json
+*.makmolga-*.bak
 .codex/
 docs/mcp-config.toml
 .env
@@ -26,3 +29,8 @@ dist/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Local working notes and shell caches
+memory/
+CLAUDE.md
+Microsoft/

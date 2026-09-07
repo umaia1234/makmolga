@@ -25,8 +25,9 @@ public final class SelectorScreen extends Screen {
     }
     @Override protected void init() {
         cards.clear();
-        contentWidth = Math.min(650, width - 24); left = (width - contentWidth) / 2;
-        int gap = 5, cardWidth = (contentWidth - gap * 4) / 5;
+        int count = companion.characters.size();
+        contentWidth = Math.min(Math.min(900, width - 24), count * 155 + (count - 1) * 5); left = (width - contentWidth) / 2;
+        int gap = 5, cardWidth = (contentWidth - gap * (count - 1)) / count;
         int cardHeight = Math.max(74, Math.min(192, height - 158));
         int top = Math.max(50, (height - (cardHeight + 144)) / 2 + 50);
         cardBottom = top + cardHeight;

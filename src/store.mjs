@@ -7,7 +7,15 @@ export function atomicJson(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(value, (_key, v) => typeof v === 'bigint' ? String(v) : v, 2) + '\n', { mode: 0o600 });
-  fs.renameSync(tmp, file);
+  // Windows virus scanners/indexers can briefly deny replacement of a file.
+  // Keep the old file intact and retry the atomic rename; never unlink it first.
+  for (let attempt = 0; ; attempt++) {
+    try { fs.renameSync(tmp, file); break; }
+    catch (error) {
+      if (process.platform !== 'win32' || !['EPERM', 'EACCES', 'EBUSY'].includes(error.code) || attempt >= 5) throw error;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20 * 2 ** attempt);
+    }
+  }
 }
 export class Store extends EventEmitter {
   constructor(dir) {

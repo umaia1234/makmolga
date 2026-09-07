@@ -2,7 +2,7 @@ plugins {
     id 'net.fabricmc.fabric-loom' version '1.17.20'
 }
 
-version = '0.3.0'
+version = '0.4.0-alpha.1'
 group = 'local.companion'
 base { archivesName = 'companion-selector-26.2' }
 
@@ -44,5 +44,17 @@ tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 tasks.withType(Test).configureEach { useJUnitPlatform() }
 processResources {
     inputs.property 'version', project.version
+    def originalEdition = project.findProperty('characterEdition') == 'originals'
+    inputs.property 'characterEdition', originalEdition ? 'originals' : 'personal'
     filesMatching('fabric.mod.json') { expand version: project.version }
+    if (originalEdition) {
+        exclude 'assets/companion/textures/skins/yanro.png', 'assets/companion/textures/skins/gpchan.png',
+            'assets/companion/textures/skins/doro.png', 'assets/companion/textures/skins/gemchan.png', 'assets/companion/textures/skins/spiki.png'
+        doLast {
+            def catalogFile = new File(destinationDir, 'assets/companion/characters.json')
+            def catalog = new groovy.json.JsonSlurper().parse(catalogFile)
+            catalog.characters = catalog.characters.findAll { it.id in ['clchan', 'fablechan'] }
+            catalogFile.setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(catalog)) + '\n', 'UTF-8')
+        }
+    }
 }

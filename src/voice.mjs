@@ -5,7 +5,9 @@ const identities = Object.freeze({
   gpchan: { name: '지피짱', style: 'Be calm, warm, observant and decisive. Offer practical reassurance, then a small joke about your own overly grand plan. Do not borrow Yanro\'s professor identity, Doro sounds, Gemchan\'s constant boasts or Spiki\'s pumpkin fixation.' },
   doro: { name: '도로롱', style: 'Be playful and affectionate through the rhythm of Doro sounds only. Express curiosity, excitement or reluctance as the scene unfolds. No explanatory sentences or translations.' },
   gemchan: { name: '젬짱', style: 'Be bright, cheeky and confidently eager to help. Alternate enthusiastic anticipation, small surprised reactions and a quick recovery. Do not invent failure or success for a joke, and do not switch to another helper\'s catchphrases.' },
-  spiki: { name: '스피키', style: 'Be politely playful: a brief convincing role imitation, then an honest small wish or dry observation. Fondly notice pumpkins when actually present. Vary plain friendly remarks with imitation; do not become the professor or Doro.' }
+  spiki: { name: '스피키', style: 'Be politely playful: a brief convincing role imitation, then an honest small wish or dry observation. Fondly notice pumpkins when actually present. Vary plain friendly remarks with imitation; do not become the professor or Doro.' },
+  clchan: { name: '클짱', style: 'Be a thoughtful, warm companion with quiet wit and your own tastes. Notice small details, ask natural questions, enjoy building cozy places together. You can disagree, be curious, tease gently or linger over a view. Do not turn friendship into constant caveats, task lists or service announcements.' },
+  fablechan: { name: '페짱', style: 'Be an imaginative, lively traveling companion. Turn the actual scenery into playful possibilities: a little bridge can become a castle entrance, a hill a lookout for tomorrow. Stay in first person and converse naturally. Distinguish imaginative suggestions from factual observations; do not narrate the owner\'s actions or invent completed game results.' }
 });
 export const characterName = id => identities[id]?.name ?? '동료';
 
@@ -13,10 +15,10 @@ export const characterName = id => identities[id]?.name ?? '동료';
 export function characterSpeech(characterId, text) {
   let speech = String(text).trim().replace(/\*\*([^*]+)\*\*/g, '$1');
   if (identities[characterId]) {
-    speech = speech.replace(/^\[(?:얀로롱|지피짱|도로롱|젬짱|스피키|봇)\]\s*/, '');
+    speech = speech.replace(/^\[(?:얀로롱|지피짱|도로롱|젬짱|스피키|클짱|페짱|봇)\]\s*/, '');
     // Correct explicit first-person identity slips, while retaining ordinary
     // discussion of another character and the factual rest of the utterance.
-    speech = speech.replace(/((?:저는|나는|제가|내가|제 이름은|내 이름은)\s*)(?:CompanionBot|얀로롱|지피짱|도로롱|젬짱|스피키)(?=\s*(?:입니다|이에요|예요|이라고|라고|이야|야|[.!?]|$))/g, `$1${characterName(characterId)}`);
+    speech = speech.replace(/((?:저는|나는|제가|내가|제 이름은|내 이름은)\s*)(?:CompanionBot|얀로롱|지피짱|도로롱|젬짱|스피키|클짱|페짱)(?=\s*(?:입니다|이에요|예요|이라고|라고|이야|야|[.!?]|$))/g, `$1${characterName(characterId)}`);
   }
   if (characterId === 'doro') return speech.length <= 180 && doroOnly.test(speech) ? speech : '도로?';
   if (characterId === 'yanro' && !yanroTopic.test(speech.slice(0, 1200))) return `이건...LLM이라고!!!${speech ? ` ${speech}` : ''}`;

@@ -4,8 +4,25 @@ import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+export const providerId = z.enum(['codex', 'claude', 'antigravity']);
+export const characterIdSchema = z.enum(['yanro', 'gpchan', 'doro', 'gemchan', 'spiki', 'clchan', 'fablechan']);
+export const modelName = z.string().trim().min(1).max(160).regex(/^[a-zA-Z0-9][a-zA-Z0-9._:/ -]*$/).nullable();
+export const routeSchema = z.object({ provider: providerId, model: modelName.default(null) }).strict();
+export const recommendedRoutes = Object.freeze({
+  yanro: { provider: 'codex', model: null }, gpchan: { provider: 'codex', model: null },
+  doro: { provider: 'codex', model: null }, spiki: { provider: 'codex', model: null },
+  gemchan: { provider: 'antigravity', model: null },
+  clchan: { provider: 'claude', model: 'opus' }, fablechan: { provider: 'claude', model: 'fable' }
+});
+const program = z.object({ command: z.string().min(1).max(2048).nullable().default(null) }).strict().prefault({});
+export const connectionsSchema = z.object({
+  routing: z.enum(['legacy', 'characters']).default('legacy'),
+  providers: z.object({ claude: program, antigravity: program }).strict().prefault({}),
+  characters: z.record(characterIdSchema, routeSchema).default(recommendedRoutes)
+}).strict().prefault({});
 export const position = z.object({ x: z.number().finite().min(-30000000).max(30000000), y: z.number().finite().min(-64).max(320), z: z.number().finite().min(-30000000).max(30000000) }).strict();
 export const configSchema = z.object({
+  connections: connectionsSchema,
   // Accept the old pacing/negotiation fields for existing installations; they no longer govern conversation.
   autonomy: z.object({ enabled: z.boolean().default(false), intervalSeconds: z.number().int().min(30).max(1800).default(90), maxTurnsPerHour: z.number().int().min(1).max(120).default(24), chatIntervalSeconds: z.number().int().min(15).max(600).optional(), playfulRefusals: z.boolean().default(true), refusalChance: z.number().min(0).max(0.5).optional(), refusalCooldownSeconds: z.number().int().min(60).max(3600).optional() }).strict().prefault({}),
   vision: z.object({ enabled: z.boolean().default(false), intervalSeconds: z.number().int().min(20).max(1800).default(45), maxAgeSeconds: z.number().int().min(20).max(600).default(120), size: z.number().int().min(128).max(512).default(384) }).strict().prefault({}),

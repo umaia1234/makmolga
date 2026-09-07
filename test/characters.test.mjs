@@ -4,14 +4,22 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { ROOT } from '../src/config.mjs';
-import { characters, personaContext } from '../src/characters.mjs';
+import { characters, personaContext, retainAvailableSelection } from '../src/characters.mjs';
 import { dispatch } from '../src/tools.mjs';
 import { Store } from '../src/store.mjs';
 import { serve } from '../src/api.mjs';
 import { fixture } from './helpers.mjs';
 
-test('all five active skins have matching Fabric resources, catalog hashes and dimensions', () => {
-  assert.equal(characters.length, 5);
+test('an edition change retains unavailable character history and requires a fresh selection', async t => {
+  const { store } = fixture(t); const old = { characterId: 'unavailable-fan-pack', worldKey: 'world-a', revision: 5 };
+  store.data.helper = old; store.data.controller.characterThreads = { 'unavailable-fan-pack': 'saved-thread' };
+  retainAvailableSelection(store);
+  assert.equal(store.data.helper, null); assert.deepEqual(store.data.unavailableHelper, old);
+  assert.equal(store.data.controller.characterThreads['unavailable-fan-pack'], 'saved-thread');
+});
+
+test('all seven active skins have matching Fabric resources, catalog hashes and dimensions', () => {
+  assert.equal(characters.length, 7);
   for (const c of characters) {
     const source = fs.readFileSync(path.join(ROOT, 'character-pack', c.skin));
     const resource = fs.readFileSync(path.join(ROOT, 'fabric-mod/src/main/resources/assets/companion/textures/skins', `${c.id}.png`));

@@ -1,0 +1,35 @@
+name: 문제 보고
+description: 설치 또는 함께 플레이하는 중에 생긴 문제를 알려 주세요.
+title: "[문제] "
+body:
+  - type: markdown
+    attributes:
+      value: "계정 파일, runtime 폴더, 인증 코드, 비공개 서버 주소는 첨부하지 마세요. 오류 메시지의 개인 정보도 확인해 주세요."
+  - type: input
+    id: version
+    attributes:
+      label: 맠몰가 버전
+      placeholder: v0.4.0-alpha.1
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 게임과 실행 환경
+      description: Windows 버전, Minecraft 버전, 런처, 사용한 AI 서비스를 알려 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 어떤 순서로 문제가 발생했나요?
+      description: 설치 단계 또는 게임에서 하신 행동과 기대한 결과를 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 실제 결과와 오류 문구
+      description: 화면에 표시된 문구와 재현 여부를 알려 주세요.
+    validations:
+      required: true

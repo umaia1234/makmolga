@@ -25,8 +25,8 @@ public final class CharacterCatalog {
         try (var input = Objects.requireNonNull(CharacterCatalog.class.getResourceAsStream("/assets/companion/characters.json"));
              var reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
             var result = new Gson().fromJson(reader, Document.class).characters();
-            if (result.size() != 5 || result.stream().map(Character::id).distinct().count() != 5)
-                throw new IllegalStateException("Expected five distinct companion characters");
+            if (result.isEmpty() || result.stream().map(Character::id).distinct().count() != result.size())
+                throw new IllegalStateException("Expected distinct companion characters");
             return List.copyOf(result);
         } catch (Exception e) { throw new IllegalStateException("Cannot read companion character pack", e); }
     }

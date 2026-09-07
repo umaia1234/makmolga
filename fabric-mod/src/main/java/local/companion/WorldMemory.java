@@ -11,7 +11,7 @@ import java.util.*;
 /** Client preferences only: never opens or rewrites a Minecraft world save. */
 public final class WorldMemory {
     private static final Gson JSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Set<String> IDS = Set.of("yanro", "gpchan", "doro", "gemchan", "spiki");
+    private static final Set<String> IDS = Set.of("yanro", "gpchan", "doro", "gemchan", "spiki", "clchan", "fablechan");
     public record Selection(String characterId, boolean deferred) {}
     private static final class Document {
         int schemaVersion = 1;
@@ -20,6 +20,7 @@ public final class WorldMemory {
     }
     private final Path file;
     private Document document;
+    private Set<String> availableIds = IDS;
     public WorldMemory(Path file) throws IOException {
         this.file = file;
         try {
@@ -38,10 +39,11 @@ public final class WorldMemory {
         try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(source.getBytes(StandardCharsets.UTF_8))); }
         catch (Exception e) { throw new IllegalStateException(e); }
     }
-    public boolean shouldPrompt(String key) { return !document.worlds.containsKey(key); }
+    public void availableCharacters(Set<String> ids) { availableIds = Set.copyOf(ids); }
+    public boolean shouldPrompt(String key) { var s = document.worlds.get(key); return s == null || (s.characterId() != null && !availableIds.contains(s.characterId())); }
     public String selected(String key) {
         var s = document.worlds.get(key);
-        return s == null ? null : s.characterId();
+        return s == null || s.characterId() == null || !availableIds.contains(s.characterId()) ? null : s.characterId();
     }
     public String runtimeDirectory() { return document.runtimeDirectory; }
     public void runtimeDirectory(String value) throws IOException {
@@ -51,7 +53,7 @@ public final class WorldMemory {
     }
     public void remember(String key, String characterId) throws IOException {
         if (key == null || !key.matches("[a-f0-9]{64}")) throw new IllegalArgumentException("Invalid world key");
-        if (characterId != null && !IDS.contains(characterId)) throw new IllegalArgumentException("Invalid character");
+        if (characterId != null && !availableIds.contains(characterId)) throw new IllegalArgumentException("Invalid character");
         var previous = document.worlds.put(key, new Selection(characterId, characterId == null));
         try { save(); }
         catch (IOException e) { if (previous == null) document.worlds.remove(key); else document.worlds.put(key, previous); throw e; }

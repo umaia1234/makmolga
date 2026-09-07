@@ -8,11 +8,13 @@ import { characterName, characterSpeech } from './voice.mjs';
 import { ProxyProcess } from './proxy.mjs';
 import { Autonomy } from './autonomy.mjs';
 import { Vision } from './vision.mjs';
+import { retainAvailableSelection } from './characters.mjs';
 const { pathfinder, Movements } = pathfinderPackage;
 const foods = ['cooked_beef', 'cooked_porkchop', 'cooked_chicken', 'cooked_mutton', 'cooked_rabbit', 'bread', 'baked_potato', 'cooked_salmon', 'cooked_cod', 'carrot', 'apple', 'dried_kelp', 'melon_slice', 'sweet_berries'];
 
 export class Runtime {
   constructor(config, store, factory = mineflayer.createBot) {
+    retainAvailableSelection(store);
     this.config = config; this.store = store; this.factory = factory; this.bot = null; this.connection = 'disconnected';
     this.halted = store.data.pausedOnRestart || null; this.intentional = false; this.attempt = 0; this.generation = 0; this.chatChain = Promise.resolve();
     this.proxy = new ProxyProcess(config, store);

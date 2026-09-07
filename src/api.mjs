@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { dispatch, json } from './tools.mjs';
 import { atomicJson } from './store.mjs';
 import path from 'node:path';
-import { ROOT } from './config.mjs';
+import { ROOT, loadConfig } from './config.mjs';
 
 export function sameToken(a, b) { const x = Buffer.from(a); const y = Buffer.from(b); return x.length === y.length && timingSafeEqual(x, y); }
 export async function serve(runtime, controller) {
@@ -29,6 +29,13 @@ export async function serve(runtime, controller) {
         if (Buffer.byteLength(raw) > 262144) throw new Error('Request too large');
         // Host lifecycle calls deliberately stay outside the model's Minecraft tool bundle.
         if (body.name === 'companion_session') return reply(200, { result: session() });
+        if (body.name === 'companion_reload_connections') {
+          if (!controller) throw new Error('Controller unavailable');
+          const saved = loadConfig();
+          if (saved.owner.uuid !== runtime.config.owner.uuid) throw new Error('Owner settings changed. Restart the runtime first.');
+          runtime.config.controller.enabled = saved.controller.enabled;
+          await controller.reloadConnections(saved.connections); return reply(200, { result: session() });
+        }
         if (body.name === 'companion_prepare') {
           if (!controller?.config.enabled) throw new Error('Enable controller.enabled in config.local.json and restart the runtime first.');
           await controller.prepare(); return reply(200, { result: session() });

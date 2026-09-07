@@ -6,6 +6,13 @@ import { characterVoiceRule } from './voice.mjs';
 const pack = path.join(ROOT, 'character-pack');
 const catalog = JSON.parse(fs.readFileSync(path.join(pack, 'characters.json'), 'utf8'));
 export const characters = Object.freeze(catalog.characters.map(c => Object.freeze(c)));
+export function retainAvailableSelection(store) {
+  const selected = store.data.helper;
+  if (selected && !characters.some(c => c.id === selected.characterId)) {
+    store.data.unavailableHelper = selected; store.data.helper = null;
+    store.event('helper_unavailable', { characterId: selected.characterId, note: 'Choose a character included in this edition. The previous selection and conversation records are retained.' }); store.save();
+  }
+}
 export function character(id) {
   const c = characters.find(c => c.id === id);
   if (!c) throw new Error('Unknown companion character.');

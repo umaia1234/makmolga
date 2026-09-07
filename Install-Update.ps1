@@ -2,7 +2,8 @@
 param([string]$GameDirectory = (Join-Path $env:APPDATA '.minecraft'))
 $ErrorActionPreference = 'Stop'
 $gameRoot = (Resolve-Path -LiteralPath $GameDirectory).Path
-$sourceJar = Join-Path $PSScriptRoot 'fabric-mod/build/libs/companion-selector-26.2-0.3.0.jar'
+$updateVersion = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'package.json') -Raw | ConvertFrom-Json).version
+$sourceJar = Join-Path $PSScriptRoot "fabric-mod/build/libs/companion-selector-26.2-$updateVersion.jar"
 if (-not (Test-Path -LiteralPath $sourceJar)) { throw 'Build the mod with Build-Mod.ps1 first.' }
 $gameProcesses = Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name='java.exe'" | Where-Object {
     $_.CommandLine -match 'net\.fabricmc\.loader\.impl\.launch\.knot\.KnotClient|net\.minecraft\.client\.main\.Main|net\.fabricmc\.devlaunchinjector\.Main'
@@ -10,7 +11,7 @@ $gameProcesses = Get-CimInstance Win32_Process -Filter "Name='javaw.exe' OR Name
 if ($gameProcesses -and -not $WhatIfPreference) { throw 'Exit Minecraft before applying the update. The local server can stay running.' }
 $mods = Join-Path $gameRoot 'mods'
 $oldJars = if (Test-Path -LiteralPath $mods) { Get-ChildItem -LiteralPath $mods -File | Where-Object Name -Match '^companion-selector-26\.2-.*\.jar$' }
-if ($PSCmdlet.ShouldProcess($mods, 'Back up the previous companion mod and install v0.3.0')) {
+if ($PSCmdlet.ShouldProcess($mods, "Back up the previous companion mod and install v$updateVersion")) {
     $backup = Join-Path $PSScriptRoot ('runtime/mod-backups/' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
     New-Item -ItemType Directory -Path $backup, $mods -Force | Out-Null
     foreach ($jar in $oldJars) { Move-Item -LiteralPath $jar.FullName -Destination (Join-Path $backup $jar.Name) }
@@ -22,5 +23,5 @@ if ($PSCmdlet.ShouldProcess($mods, 'Back up the previous companion mod and insta
         }
         throw
     }
-    Write-Output 'Installed companion v0.3.0. Restart the companion runtime and launch the Fabric 26.2 profile.'
+    Write-Output "Installed companion v$updateVersion. Restart the companion runtime and launch the Fabric 26.2 profile."
 }

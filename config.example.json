@@ -1,4 +1,57 @@
 {
+  "connections": {
+    "routing": "legacy",
+    "providers": {
+      "claude": {
+        "command": null
+      },
+      "antigravity": {
+        "command": null
+      }
+    },
+    "characters": {
+      "yanro": {
+        "provider": "codex",
+        "model": null
+      },
+      "gpchan": {
+        "provider": "codex",
+        "model": null
+      },
+      "doro": {
+        "provider": "codex",
+        "model": null
+      },
+      "spiki": {
+        "provider": "codex",
+        "model": null
+      },
+      "gemchan": {
+        "provider": "antigravity",
+        "model": null
+      },
+      "clchan": {
+        "provider": "claude",
+        "model": "opus"
+      },
+      "fablechan": {
+        "provider": "claude",
+        "model": "fable"
+      }
+    }
+  },
+  "autonomy": {
+    "enabled": false,
+    "intervalSeconds": 90,
+    "maxTurnsPerHour": 24,
+    "playfulRefusals": true
+  },
+  "vision": {
+    "enabled": false,
+    "intervalSeconds": 45,
+    "maxAgeSeconds": 120,
+    "size": 384
+  },
   "minecraft": {
     "host": "127.0.0.1",
     "port": 25565,
@@ -29,14 +82,14 @@
     "accountIndex": 0
   },
   "safety": {
+    "protectiveStops": false,
     "minHealth": 8,
     "disconnectHealth": 4,
     "minOxygen": 8,
     "autoEat": true,
     "eatBelow": 16,
     "maxTravel": 64,
-    "home": null,
-    "protectiveStops": false
+    "home": null
   },
   "controller": {
     "enabled": false,
@@ -48,17 +101,5 @@
     "replyInGame": true,
     "maxTurnsPerHour": null,
     "idleTimeoutSeconds": 300
-  },
-  "autonomy": {
-    "enabled": false,
-    "intervalSeconds": 90,
-    "maxTurnsPerHour": 24,
-    "playfulRefusals": true
-  },
-  "vision": {
-    "enabled": false,
-    "intervalSeconds": 45,
-    "maxAgeSeconds": 120,
-    "size": 384
   }
 }

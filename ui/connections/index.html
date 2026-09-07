@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>함께할 준비 · MAKMOLGA</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/setup.css"><script src="/app.js" defer></script></head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="#"><span class="brand-mark">m<span>✦</span></span><span>MAKMOLGA<small>같은 세계, 다른 친구들</small></span></a>
+    <div class="nav-label">함께할 준비</div>
+    <nav aria-label="연결 센터"><a class="active" href="#game"><span>⌂</span> 게임 준비</a><a href="#connections"><span>◈</span> AI 연결</a><a href="#characters"><span>♧</span> 캐릭터와 모델</a><a href="#checks"><span>◎</span> 연결 기록</a></nav>
+    <div class="side-note"><span class="online-dot"></span> 이 PC에서만 실행됩니다<p>계정 로그인은 공식 서비스에서,<br>함께하는 시간은 마인크래프트에서.</p></div>
+    <div class="side-bottom">MAKMOLGA <span>CONNECTIONS / 01</span></div>
+  </aside>
+  <main>
+    <header class="topbar"><span>내 동료들 <span class="slash">/</span> 함께할 준비 <span class="release-badge" id="release-version">WINDOWS · 26.2</span></span><button class="text-button" id="refresh">↻ 다시 확인</button></header>
+    <section class="hero">
+      <div><div class="eyebrow"><span></span> LET’S PLAY TOGETHER</div><h1>오늘도, 같은 세계에서.</h1><p>같이 걷고, 엉뚱한 이야기를 나누고, 다음 모험을 고르는 친구.<br>처음 한 번 준비하고, 마인크래프트에서 만나세요.</p>
+      <a class="primary hero-link" href="#game">함께할 준비 시작하기 <span>↓</span></a><small class="hero-caption">Minecraft Java 26.2 · Windows x64 · 실험적 동료 모드</small></div>
+      <div class="constellation" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="pixel-face face-gem" data-face="gemchan"></div><div class="pixel-face face-cl" data-face="clchan"></div><div class="pixel-face face-fable" data-face="fablechan"></div><div class="center-star">✦</div><span class="star star-one">+</span><span class="star star-two">✧</span><span class="star star-three">·</span><div class="float-label">다음 모험, 같이 가요.</div></div>
+    </section>
+    <div id="banner" class="banner hidden" role="status" aria-live="polite"></div>
+    <section class="section game-section" id="game">
+      <div class="section-heading"><div><h2>우리의 첫 접속 <span>START HERE</span></h2><p>모드 설치 → 내 월드 연결 → 아래에서 AI 로그인 → 함께 시작</p></div><span class="badge" id="game-readiness">준비 상태 확인 중</span></div>
+      <div class="setup-grid">
+        <article class="setup-card"><div class="setup-step">01 <span>게임에 친구 초대하기</span></div><h3>모드와 실행 환경</h3><p class="setup-description">Minecraft와 런처를 닫은 뒤 설치해 주세요. 기존 동료 모드와 설정은 백업합니다.</p>
+          <label for="game-directory">Minecraft 게임 폴더</label><input id="game-directory" autocomplete="off" spellcheck="false" placeholder="C:\Users\사용자\AppData\Roaming\.minecraft">
+          <small>별도 런처는 Fabric 26.2 인스턴스의 게임 폴더를 지정해 주세요.</small>
+          <div class="setup-buttons"><button class="secondary" id="game-install">게임에 모드 설치</button><button class="secondary" id="game-prepare">실행 환경 준비</button></div>
+          <ul class="readiness-list" id="game-components"><li>설치 상태를 읽고 있습니다…</li></ul>
+          <div class="setup-callout">모드는 화면과 캐릭터를 담당합니다. 실제 동료가 접속하려면 오른쪽의 서버·봇 계정 설정도 필요합니다.</div>
+        </article>
+        <article class="setup-card"><div class="setup-step">02 <span>함께 들어갈 세계</span></div><h3>내 월드와 계정</h3><p class="setup-description">접속할 서버 또는 LAN 공개 월드와, 동시에 접속할 별도의 봇용 Java 계정이 필요합니다.</p>
+          <form id="game-form"><div class="form-grid"><div><label for="game-host">서버 주소</label><input id="game-host" required autocomplete="off" placeholder="127.0.0.1"></div><div><label for="game-port">포트</label><input id="game-port" type="number" min="1" max="65535" required value="25565"></div></div>
+          <small>LAN 월드는 공개할 때 표시되는 포트로 바꿔 주세요.</small>
+          <label for="game-owner">내 Java Edition 게임 이름</label><div class="code-row"><input id="game-owner" required pattern="[A-Za-z0-9_]{3,16}" autocomplete="off" placeholder="내 게임 이름"><button class="secondary" type="button" id="game-lookup">이름 확인</button></div><small id="owner-confirmation">내 계정과 봇 계정은 서로 다릅니다.</small>
+          <label for="game-bot">봇 계정의 게임 이름</label><input id="game-bot" required pattern="[A-Za-z0-9_]{3,16}" autocomplete="off" placeholder="봇 게임 이름">
+          <div class="setup-buttons"><button class="secondary" type="button" id="game-login">봇 계정 로그인 ↗</button></div>
+          <details class="advanced"><summary>대화 방식과 고급 설정</summary><label for="game-prefix">내 채팅을 전달하는 방법</label><select id="game-prefix"><option value="">일반 채팅으로 자연스럽게 대화</option value="!봇 ">!봇 으로 시작한 채팅만 전달</option value="custom">기존 사용자 지정 접두어 유지</option></select><label for="game-uuid">내 사용자 UUID</label><input id="game-uuid" autocomplete="off" spellcheck="false" placeholder="이름 확인을 누르면 자동으로 채워집니다"><label for="game-account-index">ViaProxy 계정 순서 (첫 계정은 0)</label><input id="game-account-index" type="number" min="0" max="99" value="0"><label class="check-row"><input id="game-autonomy" type="checkbox"> 먼저 말하고 행동하기 <small>AI 계정 사용량을 사용합니다</small></label><label class="check-row"><input id="game-vision" type="checkbox"> 동료 시야 이미지 전달 <small>화면 이미지가 선택한 AI로 전송됩니다</small></label></details>
+          <div class="setup-buttons"><button class="primary small" id="game-save">게임 설정 저장</button><button class="text-button" type="button" id="game-server">서버 응답 확인</button></div><p class="form-note" id="game-save-note">설정을 저장한 뒤 아래에서 사용할 AI에 로그인해 주세요.</p></form>
+        </article>
+      </div>
+      <div class="play-bar"><div><div class="eyebrow">READY WHEN YOU ARE</div><h3 id="game-status-title">처음 만날 준비를 해 볼까요?</h3><p id="game-status-note">게임 설정과 AI 로그인을 마치면 동료를 불러올 수 있습니다.</p></div><div class="play-actions"><button class="primary" id="game-start">✦ 함께 시작</button><button class="secondary" id="game-stop">멈추기</button><button class="secondary" id="game-resume">다시 움직이기</button><button class="text-button" id="game-shutdown">실행기 종료</button></div></div>
+    </section>
+    <section class="section" id="connections"><div class="section-heading"><div><h2>연결할 AI <span>03</span></h2><p>사용할 서비스 하나만 설치·로그인하셔도 됩니다. 각 계정의 이용 한도가 적용됩니다.</p></div><button class="secondary" id="auto">기본 캐릭터 조합 자동 설정</button></div><div id="providers" class="provider-grid"><div class="loading">이 PC의 프로그램을 확인하고 있습니다…</div></div></section>
+    <section id="login-panel" class="login-panel hidden" aria-live="polite"><div><div class="eyebrow">계정 연결</div><h2 id="login-title">공식 계정으로 로그인해 주세요</h2><p id="login-note">로그인 페이지에서 계정을 선택하고 돌아오시면 됩니다.</p><a id="login-link" class="primary small hidden" target="_blank" rel="noopener noreferrer">공식 로그인 페이지 열기 ↗</a><form id="code-form" class="hidden"><label for="login-code">공식 페이지에 표시된 인증 코드</label><div class="code-row"><input type="password" id="login-code" autocomplete="off" placeholder="인증 코드를 여기에 붙여넣으세요"><button class="primary small">연결 완료</button></div><small>코드는 로그인 프로그램으로 바로 전달되며 저장하지 않습니다.</small></form></div><button id="login-dismiss" class="text-button">닫기 ×</button></section>
+    <section class="section" id="characters"><div class="section-heading"><div><h2>친구와 두뇌 연결 <span>04</span></h2><p>기본 조합으로 시작하고, 취향에 맞게 바꾸셔도 좋습니다.</p></div><label class="switch-label"><input type="checkbox" id="routing"> 캐릭터별 자동 연결</label></div><div class="character-table"><div class="table-head"><span>함께할 친구</span><span>연결할 서비스</span><span>모델</span><span>연결 확인</span></div><div id="character-rows"></div></div><div class="save-bar"><span id="save-note">캐릭터마다 대화 기록을 따로 기억합니다.</span><div><button class="secondary" id="apply">실행 중인 동료에 적용</button><button class="primary small" id="save">설정 저장</button></div></div></section>
+    <section class="section" id="checks"><div class="section-heading"><h2>연결 기록 <span>05</span></h2><p>연결 시험은 계정의 모델 사용량을 사용합니다.</p></div><div id="task-list" class="task-list"><div class="empty-state">연결 시험을 시작하면 실제 모델 응답과 도구 확인 결과가 여기에 표시됩니다.</div></div></section>
+    <footer><span>같이 걷고, 이야기하고, 만들어 가는 세계.</span><span>MAKMOLGA ✦</span></footer>
+  </main>
+</div>
+</body></html>

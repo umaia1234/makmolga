@@ -1,18 +1,36 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from './config.mjs';
-import { Rpc } from './rpc.mjs';
+import { RoutedRpc } from './routed-rpc.mjs';
+import { resolveRoute, routeKey } from './provider-routing.mjs';
 import { dispatch, toolSpec, json } from './tools.mjs';
 import { personaContext } from './characters.mjs';
 import { characterSpeech, personaInstructions } from './voice.mjs';
 
 export class Controller {
-  constructor(runtime, rpc = new Rpc()) {
+  constructor(runtime, rpc = new RoutedRpc(runtime)) {
     this.runtime = runtime; this.store = runtime.store; this.config = runtime.config.controller; this.rpc = rpc;
     this.activeTurn = null; this.sending = false; this.started = false; this.fault = false; this.closed = false; this.replied = new Set();
+    this.attachRpc();
+    this.haltListener = event => {
+      if (event.type === 'halted' && this.activeTurn && this.rpc.supportsSteer === false) void this.rpc.request('turn/interrupt', { threadId: this.threadId, turnId: this.activeTurn }).catch(error => { this.lastError = error.message; this.fault = true; });
+    };
+    this.store.on('event', this.haltListener);
+  }
+  attachRpc() {
     this.rpc.on('notification', m => { this.onNotification(m).catch(e => this.store.event('controller_event_error', { error: e.message })); });
     this.rpc.on('request', m => { this.onRequest(m).catch(e => { try { this.rpc.reject(m.id, e.message); } catch {} }); });
     this.rpc.on('closed', e => { if (!this.closed) { this.fault = true; this.lastError ||= e.message; this.store.event('controller_disconnected', { error: this.lastError }); } });
+  }
+  async reloadConnections(connections) {
+    if (this.activeTurn || this.sending || this.starting || this.switching) throw new Error('답변이 진행 중입니다. 현재 대화가 끝난 뒤 설정 적용을 눌러 주세요.');
+    clearInterval(this.timer); this.timer = null;
+    this.rpc.removeAllListeners(); this.rpc.close(); this.runtime.config.connections = connections;
+    this.rpc = new RoutedRpc(this.runtime); this.attachRpc();
+    this.started = false; this.fault = false; this.closed = false; this.lastError = null;
+    this.characterKey = null; this.conversationKey = null; this.route = null;
+    if (this.config.enabled) { try { await this.prepare(); } finally { this.run(); } }
+    return this.status();
   }
   async start() {
     if (this.closed || this.fault) throw new Error('Controller is closed or faulted. Inspect events before restarting the runtime.');
@@ -26,6 +44,7 @@ export class Controller {
     return { enabled: this.config.enabled, ready: this.config.enabled && this.started && !this.closed && !this.fault,
       starting: !!this.starting, fault: this.fault, closed: this.closed, activeTurn: this.activeTurn,
       threadId: this.threadId || this.store.data.controller.threadId || null, characterId: this.characterKey === 'unselected' ? null : this.characterKey ?? null,
+      provider: this.route?.provider || 'codex', model: this.route?.model ?? null,
       rateLimited: !!this.rateLimited, error: this.lastError || null };
   }
   async prepare() {
@@ -33,7 +52,7 @@ export class Controller {
     if (!this.activeTurn) await this.selectCharacterThread();
     const account = await this.rpc.request('account/read', { refreshToken: false });
     if (account.requiresOpenaiAuth !== false && !account.account) {
-      this.fault = true; this.lastError = 'Codex login is required. Sign in and restart the companion runtime.';
+      this.fault = true; this.lastError = `${this.route?.provider || 'Codex'} login is required. Sign in through the connection center and reconnect.`;
       throw new Error(this.lastError);
     }
   }
@@ -56,15 +75,22 @@ export class Controller {
   }
   async bindCharacterThread() {
     const characterId = this.store.data.helper?.characterId ?? null;
-    const key = characterId || 'unselected';
-    if (this.characterKey === key) return;
+    const characterKey = characterId || 'unselected';
+    this.attemptedCharacterKey = characterKey;
+    const route = resolveRoute(this.runtime.config, characterId);
+    const connections = this.runtime.config.connections;
+    const inheritCodex = route.provider === 'codex' && (connections?.routing !== 'characters' || !connections.characters[characterId]?.model);
+    const key = inheritCodex ? characterKey : routeKey(route, characterId);
+    if (this.characterKey === characterKey && this.conversationKey === key) return;
     if (this.activeTurn) throw new Error('Finish the active character turn before changing its conversation.');
+    if (this.rpc.use) await this.rpc.use(route);
+    this.route = route;
     // Separate conversational memory for each persona; the common owner inbox
     // and actual Minecraft world state remain shared.
     const threads = this.store.data.controller.characterThreads || {};
     if (!Object.keys(threads).length && this.store.data.controller.threadId && !this.store.data.controller.legacyThreadId)
       this.store.data.controller.legacyThreadId = this.store.data.controller.threadId;
-    const savedId = threads[key] || (this.config.threadId && !Object.keys(threads).length ? this.config.threadId : null);
+    const savedId = threads[key] || (route.provider === 'codex' && this.config.threadId && !Object.keys(threads).length ? this.config.threadId : null);
     let result;
     const prompt = fs.readFileSync(path.join(ROOT, 'skills', 'minecraft-companion', 'references', 'controller-prompt.md'), 'utf8') + '\n\n' + personaInstructions(characterId);
     if (savedId) {
@@ -79,15 +105,16 @@ export class Controller {
       // An existing Desktop conversation uses the MCP mode instead.
     }
     if (!result) {
-      result = await this.rpc.request('thread/start', { cwd: ROOT, ...(this.config.model ? { model: this.config.model } : {}), developerInstructions: prompt, dynamicTools: toolSpec(), environments: [], ephemeral: false, serviceName: 'minecraft-companion' });
+      result = await this.rpc.request('thread/start', { cwd: ROOT, ...(route.model ? { model: route.model } : {}), developerInstructions: prompt, dynamicTools: toolSpec(), environments: [], ephemeral: false, serviceName: 'minecraft-companion' });
     }
-    this.threadId = result.thread.id; this.characterKey = key;
+    this.threadId = result.thread.id; this.characterKey = characterKey; this.conversationKey = key;
     this.store.data.controller.characterThreads = { ...threads, [key]: this.threadId };
     this.store.data.controller.threadId = this.threadId; this.store.save();
     const active = result.thread.turns?.findLast(t => t.status === 'inProgress'); if (active) this.activeTurn = active.id;
     this.store.event('controller_character_ready', { characterId, threadId: this.threadId });
   }
   run() {
+    clearInterval(this.timer); this.timer = null;
     if (!this.config.enabled) return;
     this.timer = setInterval(() => { this.pump().catch(error => { this.fault = true; this.store.event('controller_failed', { error: error.message }); }); }, 500);
   }
@@ -103,6 +130,9 @@ export class Controller {
     this.store.data.controller.lastSpeechTurnId = turnId; this.store.save();
   }
   async pump() {
+    if (this.fault && !this.closed && !this.sending && !this.activeTurn && this.attemptedCharacterKey && this.attemptedCharacterKey !== (this.store.data.helper?.characterId || 'unselected')) {
+      await this.reloadConnections(this.runtime.config.connections);
+    }
     if (this.closed || this.sending || this.fault) return;
     const message = this.store.data.messages.find(m => m.status === 'pending');
     const auto = this.runtime.autonomy;
@@ -125,6 +155,9 @@ export class Controller {
       const helperRevision = this.store.data.helper?.revision || 0;
       // Finish the current character's reply before starting the newly selected character.
       if (this.activeTurn && helperRevision !== (this.store.data.controller.activeHelperRevision || 0)) return;
+      // CLIs accept one complete turn at a time. Leave new chat in the inbox;
+      // neither cancel the game job nor pretend the message was delivered.
+      if (this.activeTurn && this.rpc.supportsSteer === false) return;
       if (!this.activeTurn) await this.selectCharacterThread();
       const recent = (this.store.data.controller.requests || []).filter(t => Date.now() - t < 3600000);
       if (this.config.maxTurnsPerHour != null && recent.length >= this.config.maxTurnsPerHour) {
@@ -223,5 +256,5 @@ export class Controller {
       this.rpc.respond(id, { decision: 'decline' }); this.store.event('controller_approval_required', { method });
     } else { this.rpc.reject(id, 'Interactive approval/input must be handled in the Codex client.'); }
   }
-  close() { this.closed = true; clearInterval(this.timer); clearTimeout(this.turnTimer); this.rpc.close(); }
+  close() { this.closed = true; clearInterval(this.timer); clearTimeout(this.turnTimer); this.store.removeListener('event', this.haltListener); this.rpc.close(); }
 }

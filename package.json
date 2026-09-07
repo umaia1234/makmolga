@@ -1,6 +1,6 @@
 {
   "name": "makmolga",
-  "version": "0.3.0",
+  "version": "0.4.0-alpha.1",
   "private": true,
   "overrides": {
     "@azure/msal-node": {
@@ -17,6 +17,10 @@
   },
   "scripts": {
     "setup": "node scripts/setup.mjs",
+    "connections": "node scripts/connections.mjs --open",
+    "connections:auto": "node scripts/connections.mjs --auto --install",
+    "release:package": "node scripts/package-release.mjs",
+    "release:verify": "node scripts/verify-release.mjs",
     "start": "node src/main.mjs",
     "mcp": "node src/mcp.mjs",
     "ctl": "node src/cli.mjs",

@@ -42,4 +42,16 @@ class WorldMemoryTest {
         assertThrows(IllegalArgumentException.class, () -> memory.remember(WorldMemory.key("world"), "../../outside"));
         assertThrows(IllegalArgumentException.class, () -> memory.remember("../world", "doro"));
     }
+    @Test void changingEditionPromptsForAvailableCharactersWithoutErasingPreviousChoices() throws Exception {
+        Path file = directory.resolve("edition.json");
+        var memory = new WorldMemory(file);
+        String a = WorldMemory.key("old-world"), b = WorldMemory.key("new-world");
+        memory.remember(a, "doro"); memory.remember(b, "clchan");
+        String before = Files.readString(file);
+        memory.availableCharacters(java.util.Set.of("clchan", "fablechan"));
+        assertTrue(memory.shouldPrompt(a)); assertNull(memory.selected(a));
+        assertFalse(memory.shouldPrompt(b)); assertEquals("clchan", memory.selected(b));
+        assertEquals(before, Files.readString(file));
+        assertThrows(IllegalArgumentException.class, () -> memory.remember(a, "doro"));
+    }
 }

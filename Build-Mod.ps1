@@ -1,4 +1,4 @@
-param([string]$JavaHome, [switch]$Preview)
+param([string]$JavaHome, [switch]$Preview, [switch]$OriginalEdition)
 $ErrorActionPreference = 'Stop'
 if (-not $JavaHome) { $JavaHome = $env:JAVA_HOME }
 if (-not $JavaHome) {
@@ -15,9 +15,12 @@ if (-not $JavaHome -or -not (Test-Path -LiteralPath (Join-Path $JavaHome 'bin/ja
 $env:JAVA_HOME = $JavaHome
 if (-not $env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME = Join-Path $PSScriptRoot 'runtime/build-cache/gradle' }
 $modRoot = Join-Path $PSScriptRoot 'fabric-mod'
-& (Join-Path $modRoot 'gradlew.bat') -p $modRoot build --console=plain
+$buildArgs = @('-p', $modRoot, 'build', '--console=plain')
+if ($OriginalEdition) { $buildArgs += '-PcharacterEdition=originals' }
+& (Join-Path $modRoot 'gradlew.bat') @buildArgs
 if ($LASTEXITCODE -ne 0) { throw 'Mod build or tests failed.' }
-Write-Output "Built mod: $modRoot/build/libs/companion-selector-26.2-0.3.0.jar"
+$buildVersion = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'package.json') -Raw | ConvertFrom-Json).version
+Write-Output "Built mod: $modRoot/build/libs/companion-selector-26.2-$buildVersion.jar"
 if ($Preview) {
     & (Join-Path $modRoot 'gradlew.bat') -p $modRoot runClient -PselectorPreview --console=plain
     if ($LASTEXITCODE -ne 0) { throw 'Preview client failed.' }

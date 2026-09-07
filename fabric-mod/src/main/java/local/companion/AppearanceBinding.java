@@ -6,7 +6,7 @@ import java.util.UUID;
 
 /** Only a bot UUID returned by the authenticated, world-checked bridge is themed. */
 public final class AppearanceBinding {
-    private static final Set<String> IDS = Set.of("yanro", "gpchan", "doro", "gemchan", "spiki");
+    private static final Set<String> IDS = Set.of("yanro", "gpchan", "doro", "gemchan", "spiki", "clchan", "fablechan");
     private String world, character;
     private UUID bot;
     private long expires;

@@ -6,7 +6,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 
 /** Presentation only: callers must first verify the sender's UUID with the local bridge. */
 public final class ChatPresentation {
-    private static final Set<String> NAMES = Set.of("얀로롱", "지피짱", "도로롱", "젬짱", "스피키");
+    private static final Set<String> NAMES = Set.of("얀로롱", "지피짱", "도로롱", "젬짱", "스피키", "클짱", "페짱");
 
     public static Component forCompanion(Component shown, String selectedName) {
         if (!NAMES.contains(selectedName) || !(shown.getContents() instanceof TranslatableContents text)

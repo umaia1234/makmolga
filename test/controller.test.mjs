@@ -24,6 +24,30 @@ class FakeRpc extends EventEmitter {
   close() {}
 }
 
+test('reloading connection settings starts and stops the controller polling without touching the game', async t => {
+  const { runtime, store } = fixture(t), c = new Controller(runtime, new FakeRpc());
+  t.after(() => c.close());
+  c.prepare = async () => { c.started = true; };
+  c.run(); assert.equal(c.timer, null);
+  const job = runtime.jobs.active, messages = structuredClone(store.data.messages), halted = runtime.halted;
+  runtime.config.controller.enabled = true;
+  await c.reloadConnections(runtime.config.connections);
+  assert.ok(c.timer); assert.equal(c.status().ready, true);
+  runtime.config.controller.enabled = false;
+  await c.reloadConnections(runtime.config.connections);
+  assert.equal(c.timer, null); assert.equal(c.status().ready, false);
+  assert.equal(runtime.jobs.active, job); assert.equal(runtime.halted, halted); assert.deepEqual(store.data.messages, messages);
+});
+
+test('automatic routes keep the existing Codex model and conversation when model is inherited', async t => {
+  const { runtime, store } = fixture(t); runtime.config.connections.routing = 'characters'; runtime.config.controller.model = 'existing-model';
+  store.data.helper = { characterId: 'gpchan', revision: 1 }; store.data.controller.toolSchemaVersion = 2;
+  store.data.controller.characterThreads = { gpchan: 'existing-conversation' };
+  const rpc = new FakeRpc(), c = new Controller(runtime, rpc); t.after(() => c.close());
+  await c.start(); assert.equal(c.route.model, 'existing-model'); assert.equal(c.threadId, 'existing-conversation');
+  assert.equal(rpc.requests.some(r => r.method === 'thread/start'), false);
+});
+
 test('concurrent prepare calls connect once without creating an LLM turn or user message', async t => {
   const { runtime, store } = fixture(t); runtime.config.controller.enabled = true;
   const rpc = new FakeRpc(); let connections = 0;

@@ -39,6 +39,7 @@ public final class CompanionClient implements ClientModInitializer {
         characters = CharacterCatalog.load();
         try { memory = new WorldMemory(FabricLoader.getInstance().getConfigDir().resolve("companion-selector.json")); }
         catch (Exception e) { throw new IllegalStateException("Cannot open companion preferences", e); }
+        memory.availableCharacters(characters.stream().map(CharacterCatalog.Character::id).collect(java.util.stream.Collectors.toSet()));
         var category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath("companion", "helpers"));
         selectorKey = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.companion.select", InputConstants.Type.KEYSYM, InputConstants.KEY_H, category));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
