@@ -14,12 +14,12 @@ const copy = name => { const source = path.join(ROOT, name), target = path.join(
 for (const name of ['package.json', 'package-lock.json', 'README.md', 'START-HERE.md', 'NOTICE.md', 'Start-Makmolga.cmd', 'Start-Makmolga.ps1', 'Start-Companion.ps1', 'Stop-Companion.ps1', 'Connect-Companions.ps1', 'src', 'ui', 'resources']) copy(name);
 for (const name of ['bootstrap.ps1', 'start-session.mjs', 'connections.mjs', 'setup.mjs', 'codex-server.mjs', 'doctor.mjs', 'verify-release.mjs', 'install-skill.mjs', 'probe-provider.mjs']) copy('scripts/' + name);
 copy('skills/minecraft-companion'); copy('skills/makmolga-start');
-for (const name of ['CONNECTIONS.md', 'PRIVACY.md', 'RELEASE.md']) copy('docs/' + name);
+for (const name of ['CONNECTIONS.md', 'PRIVACY.md', 'RELEASE.md', 'RELEASE-v040-alpha1.md']) copy('docs/' + name);
 copy('docs/images/setup-center-v040.jpg');
 const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'character-pack/characters.json')));
-catalog.characters = catalog.characters.filter(c => ['clchan', 'fablechan'].includes(c.id));
 fs.mkdirSync(path.join(stage, 'character-pack'), { recursive: true });
 fs.writeFileSync(path.join(stage, 'character-pack/characters.json'), JSON.stringify(catalog, null, 2) + '\n');
+for (const name of ['README.md', 'SOURCE-README.md', 'SOURCE-manifest.json']) copy('character-pack/' + name);
 const assetRoot = 'fabric-mod/src/main/resources/assets/companion';
 fs.mkdirSync(path.join(stage, assetRoot), { recursive: true }); fs.writeFileSync(path.join(stage, assetRoot, 'characters.json'), JSON.stringify(catalog, null, 2) + '\n');
 for (const c of catalog.characters) { copy(`character-pack/personas/${c.id}.md`); copy('character-pack/' + c.skin); copy(`${assetRoot}/textures/skins/${c.id}.png`); }
@@ -35,7 +35,7 @@ function index(dir, prefix = '') {
   }
 }
 index(stage);
-fs.writeFileSync(path.join(stage, 'release.json'), JSON.stringify({ schema: 1, version, edition: 'originals', minecraft: '26.2', platform: 'windows-x64', builtAt: new Date().toISOString(), files }, null, 2) + '\n');
+fs.writeFileSync(path.join(stage, 'release.json'), JSON.stringify({ schema: 1, version, edition: 'standard', minecraft: '26.2', platform: 'windows-x64', builtAt: new Date().toISOString(), files }, null, 2) + '\n');
 verifyDirectory(stage);
 const zip = path.join(ROOT, 'dist', artifact + '.zip');
 const r = spawnSync('powershell.exe', ['-NoProfile', '-Command', 'Compress-Archive -LiteralPath $env:MAKMOLGA_STAGE -DestinationPath $env:MAKMOLGA_ZIP -CompressionLevel Optimal -Force'], { windowsHide: true, encoding: 'utf8', timeout: 120000, env: { ...process.env, MAKMOLGA_STAGE: stage, MAKMOLGA_ZIP: zip } });

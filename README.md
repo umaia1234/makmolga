@@ -6,17 +6,19 @@
 
 Minecraft Java 26.2 · Fabric · Windows x64 · 한국어
 
-[설치판 받기](https://github.com/umaia1234/makmolga/releases/tag/v0.4.0-alpha.1) · [처음 시작하기](START-HERE.md) · [개인정보와 AI 사용량](docs/PRIVACY.md) · [문제 보고](https://github.com/umaia1234/makmolga/issues)
+[설치판 받기](https://github.com/umaia1234/makmolga/releases/tag/v0.4.0-alpha.2) · [처음 시작하기](START-HERE.md) · [개인정보와 AI 사용량](docs/PRIVACY.md) · [문제 보고](https://github.com/umaia1234/makmolga/issues)
 
 </div>
 
 ## 오늘도, 같은 세계에서
 
-맠몰가는 캐릭터를 골라 마인크래프트에서 대화하고 동행하는 LLM 동료 프로젝트입니다. **v0.4.0-alpha.1은 설치 경험을 정리한 실험적 공개판**입니다. 설치 ZIP을 풀고 `Start-Makmolga.cmd`를 실행하면 게임 준비와 AI 연결을 한 화면에서 진행합니다.
+맠몰가는 캐릭터를 골라 마인크래프트에서 대화하고 동행하는 LLM 동료 프로젝트입니다. **v0.4.0-alpha.2는 기존 캐릭터를 모두 포함한 실험적 공개판**입니다. 설치 ZIP을 풀고 `Start-Makmolga.cmd`를 실행하면 게임 준비와 AI 연결을 한 화면에서 진행합니다.
 
 ![맠몰가의 게임 준비와 동료 연결 화면](docs/images/setup-center-v040.jpg)
 
-공개 설치판에는 프로젝트에서 새로 만든 **클짱**과 **페짱**이 들어 있습니다. 클짱은 작은 디테일과 조용한 농담을 좋아하고, 페짱은 눈앞의 풍경에서 다음 모험을 떠올립니다. 두 친구는 한 봇의 선택 가능한 캐릭터이며, 캐릭터별 대화 기록을 구분합니다.
+공개 설치판에는 **얀로롱·지피짱·도로롱·젬짱·스피키·클짱·페짱**이 모두 들어 있습니다. 일곱 친구는 한 봇의 선택 가능한 캐릭터이며, 캐릭터별 스킨·성격·대화 기록을 구분합니다. 게임에서 **H**를 눌러 친구를 바꿀 수 있습니다.
+
+alpha.1 설치판에서 빠졌던 기존 다섯 캐릭터를 alpha.2에서 복원했습니다. alpha.1을 받으셨다면 [업데이트 순서](START-HERE.md#다음부터--종료--업데이트)에 따라 새 ZIP으로 옮긴 뒤 모드를 다시 설치해 주세요.
 
 ## 처음 만나는 순서
 
@@ -44,6 +46,6 @@ Minecraft Java 26.2 · Fabric · Windows x64 · 한국어
 
 ## 개발과 자료
 
-개발 원본에는 개인용 7인 카탈로그가 남아 있습니다. 공개 패키저는 클짱·페짱 리소스만 포함하며, 공개용 모드는 `./Build-Mod.ps1 -OriginalEdition`으로 빌드합니다. 개발자 검사는 `npm ci`, `npm run check`, `npm test`입니다. 설치 ZIP은 `npm run release:package`로 만들고 ZIP을 다시 풀어 필수 파일·버전·체크섬·캐릭터 구성을 검사합니다.
+개발 원본과 설치판은 같은 7인 카탈로그를 사용합니다. 모드는 `./Build-Mod.ps1`으로 빌드합니다. 개발자 검사는 `npm ci`, `npm run check`, `npm test`입니다. 설치 ZIP은 `npm run release:package`로 만들고 ZIP을 다시 풀어 필수 파일·버전·체크섬·7인 카탈로그와 실제 JAR 안의 스킨까지 검사합니다.
 
 각 리소스와 의존성의 권리는 [자료 안내](NOTICE.md)를 따릅니다. Mojang/Microsoft, OpenAI, Anthropic, Google의 공식 모드나 제휴 제품이 아닙니다.

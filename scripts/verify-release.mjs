@@ -16,7 +16,14 @@ $z = [IO.Compression.ZipFile]::OpenRead($env:MAKMOLGA_JAR)
 try {
   $m = [IO.StreamReader]::new($z.GetEntry('fabric.mod.json').Open()); try { $mod = $m.ReadToEnd() | ConvertFrom-Json } finally { $m.Dispose() }
   $c = [IO.StreamReader]::new($z.GetEntry('assets/companion/characters.json').Open()); try { $catalog = $c.ReadToEnd() | ConvertFrom-Json } finally { $c.Dispose() }
-  @{mod=$mod;catalog=$catalog;entries=@($z.Entries | ForEach-Object FullName)} | ConvertTo-Json -Depth 15 -Compress
+  $skins = @{}
+  foreach ($character in $catalog.characters) {
+    $entry = $z.GetEntry('assets/companion/textures/skins/' + $character.id + '.png')
+    if ($null -eq $entry) { throw ('Missing JAR skin: ' + $character.id) }
+    $stream = $entry.Open(); $sha = [Security.Cryptography.SHA256]::Create()
+    try { $skins[$character.id] = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '').ToLowerInvariant() } finally { $stream.Dispose(); $sha.Dispose() }
+  }
+  @{mod=$mod;catalog=$catalog;skins=$skins;entries=@($z.Entries | ForEach-Object FullName)} | ConvertTo-Json -Depth 15 -Compress
 } finally { $z.Dispose() }`;
   const result = spawnSync('powershell.exe', ['-NoProfile', '-EncodedCommand', Buffer.from(code, 'utf16le').toString('base64')], { env: { ...process.env, MAKMOLGA_JAR: path.resolve(file) }, encoding: 'utf8', windowsHide: true, maxBuffer: 4 * 1024 * 1024 });
   if (result.status !== 0) throw new Error('Cannot inspect the Fabric JAR: ' + result.stderr.slice(0, 1800));
@@ -25,7 +32,7 @@ try {
 export function verifyDirectory(directory, { installed = false } = {}) {
   directory = fs.realpathSync(directory);
   const manifest = JSON.parse(fs.readFileSync(path.join(directory, 'release.json')));
-  if (manifest.schema !== 1 || manifest.edition !== 'originals') throw new Error('Unknown release manifest');
+  if (manifest.schema !== 1 || !['standard', 'originals'].includes(manifest.edition)) throw new Error('Unknown release manifest');
   for (const [name, hash] of Object.entries(manifest.files)) {
     if (forbidden.test(name) || name.includes('\\') || name.split('/').includes('..') || path.isAbsolute(name)) throw new Error('Forbidden package path: ' + name);
     const file = path.join(directory, name);
@@ -36,11 +43,17 @@ export function verifyDirectory(directory, { installed = false } = {}) {
   const pkg = JSON.parse(fs.readFileSync(path.join(directory, 'package.json'))), lock = JSON.parse(fs.readFileSync(path.join(directory, 'package-lock.json')));
   if (pkg.version !== manifest.version || lock.version !== manifest.version || lock.packages[''].version !== manifest.version) throw new Error('Package version mismatch');
   const jar = inspectJar(path.join(directory, 'mods', `companion-selector-26.2-${manifest.version}.jar`));
-  const expected = ['clchan', 'fablechan'];
+  // Keep verification of the previously published alpha.1 archive available.
+  // New standard releases must contain the full roster, including the original companions.
+  const expected = manifest.edition === 'originals' ? ['clchan', 'fablechan'] : ['clchan', 'doro', 'fablechan', 'gemchan', 'gpchan', 'spiki', 'yanro'];
   const catalog = JSON.parse(fs.readFileSync(path.join(directory, 'character-pack/characters.json')));
   if (jar.mod.version !== manifest.version || JSON.stringify(jar.catalog.characters.map(c => c.id).sort()) !== JSON.stringify(expected) || JSON.stringify(catalog.characters.map(c => c.id).sort()) !== JSON.stringify(expected)) throw new Error('JAR/catalog/version mismatch');
-  if (jar.entries.some(e => /textures\/skins\/(yanro|gpchan|doro|gemchan|spiki)\.png$/.test(e))) throw new Error('Non-release character art in JAR');
+  const resourceCatalog = JSON.parse(fs.readFileSync(path.join(directory, 'fabric-mod/src/main/resources/assets/companion/characters.json')));
+  if (JSON.stringify(catalog) !== JSON.stringify(jar.catalog) || JSON.stringify(catalog) !== JSON.stringify(resourceCatalog)) throw new Error('Character catalog content mismatch');
+  const jarSkins = jar.entries.filter(e => /^assets\/companion\/textures\/skins\/[^/]+\.png$/.test(e)).map(e => path.posix.basename(e, '.png')).sort();
+  if (JSON.stringify(jarSkins) !== JSON.stringify(expected)) throw new Error('JAR skin roster mismatch');
   for (const c of catalog.characters) {
+    if (jar.skins[c.id] !== c.sha256) throw new Error('JAR skin/catalog checksum mismatch: ' + c.id);
     for (const file of [path.join(directory, 'character-pack', c.skin), path.join(directory, 'fabric-mod/src/main/resources/assets/companion/textures/skins', c.id + '.png')]) if (digest(file) !== c.sha256) throw new Error('Skin/catalog checksum mismatch');
     if (!fs.existsSync(path.join(directory, 'character-pack/personas', c.id + '.md'))) throw new Error('Persona missing');
   }

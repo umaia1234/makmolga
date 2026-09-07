@@ -1,4 +1,4 @@
-param([string]$JavaHome, [switch]$Preview, [switch]$OriginalEdition)
+param([string]$JavaHome, [switch]$Preview)
 $ErrorActionPreference = 'Stop'
 if (-not $JavaHome) { $JavaHome = $env:JAVA_HOME }
 if (-not $JavaHome) {
@@ -16,7 +16,6 @@ $env:JAVA_HOME = $JavaHome
 if (-not $env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME = Join-Path $PSScriptRoot 'runtime/build-cache/gradle' }
 $modRoot = Join-Path $PSScriptRoot 'fabric-mod'
 $buildArgs = @('-p', $modRoot, 'build', '--console=plain')
-if ($OriginalEdition) { $buildArgs += '-PcharacterEdition=originals' }
 & (Join-Path $modRoot 'gradlew.bat') @buildArgs
 if ($LASTEXITCODE -ne 0) { throw 'Mod build or tests failed.' }
 $buildVersion = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'package.json') -Raw | ConvertFrom-Json).version
